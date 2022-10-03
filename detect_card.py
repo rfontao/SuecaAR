@@ -1,8 +1,13 @@
 import cv2 as cv
 import math
+import numpy as np
 
 cv.namedWindow("Webcam")
 cv.namedWindow("Edges")
+
+files = np.load("desktop_fontao.npz")
+camera_matrix = files["camera_matrix"]
+distortion_coefficient = files["distortion_coefficients"]
 
 
 t1 = 100
@@ -63,4 +68,9 @@ while True:
     cv.imshow("Webcam", img)
     cv.imshow("Contours", img1)
 
-    cv.waitKey(10)
+    x0, y0, x1, y1 = approx_list[0]
+    quad_3d = np.float32([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]])
+    _ret, rvec, tvec = cv.solvePnPRansac(quad_3d, quad_3d, camera_matrix, distortion_coefficient)
+
+
+    cv.waitKey(50)
