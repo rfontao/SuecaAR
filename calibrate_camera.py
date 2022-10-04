@@ -24,7 +24,7 @@ imgpoints = []  # 2d points in image plane.
 cv.namedWindow("img")
 
 # Capture video from webcam
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture(2)
 if not cap.isOpened():
     print("Can't open stream")
     exit()
@@ -58,7 +58,7 @@ while img_count < 11:
         # Freeze image to allow for the rotation of the chessboard
         cv.waitKey(2000)
 
-    cv.waitKey(500)
+    cv.waitKey(50)
 
 ret, camera_matrix, distort_coeff, rvecs, tvecs = cv.calibrateCamera(
     objpoints, imgpoints, gray.shape[::-1], None, None)
