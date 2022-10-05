@@ -52,7 +52,7 @@ while True:
     equalized = clahe.apply(blur)
 
     # edges = cv.Canny(equalized, t1, t2)
-    ret, edges = cv.threshold(equalized,200,255,cv.THRESH_BINARY)
+    ret, edges = cv.threshold(equalized, 200, 255, cv.THRESH_BINARY)
 
     contours, hierarchy = cv.findContours(
         edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -88,12 +88,11 @@ while True:
 
     approx_list = sorted(approx_list, key=cv.contourArea, reverse=True)
 
-
     cv.imshow("Webcam", img)
     cv.imshow("Contours", img1)
 
     if detected and len(approx_list[0]) == 4:
-        approx_list = np.array(approx_list[0],dtype=np.float32)
+        approx_list = np.array(approx_list[0], dtype=np.float32)
         x0, y0, x1, y1 = approx_list
         quad_3d = np.float32([[1, 1, 0], [0, 1, 0], [0, 0, 0], [1, 0, 0]])
         # approx_list = np.float32([approx_list[0][0],approx_list[0][1],approx_list[0][2],approx_list[0][3]])
@@ -101,7 +100,7 @@ while True:
             quad_3d, approx_list, camera_matrix, distortion_coefficient)
 
         if ret == True:
-            
+
             # verts = ar_verts * [(x1-x0), (y1-y0), -(x1-x0)*0.3] + (x0, y0, 0)
             verts = cv.projectPoints(
                 ar_verts, rvec, tvec, camera_matrix, distortion_coefficient)[0].reshape(-1, 2)
@@ -110,20 +109,19 @@ while True:
             for i, j in ar_edges:
                 (x0, y0), (x1, y1) = verts[i], verts[j]
                 if -10000 < x0 < 10000 and -10000 < x1 < 10000 and -10000 < y0 < 10000 and -10000 < y1 < 10000:
-                    cv.line(img2, (int(x0), int(y0)), (int(x1), int(y1)), (0, 0, 255), 2)
+                    cv.line(img2, (int(x0), int(y0)),
+                            (int(x1), int(y1)), (0, 0, 255), 2)
             dst = np.array([
-                    [0, 0],
-                    [200, 0],
-                    [200, 400],
-                    [0, 400]], dtype = "float32")
+                [0, 0],
+                [200, 0],
+                [200, 400],
+                [0, 400]], dtype="float32")
 
-            # print(approx_list) 
+            # print(approx_list)
             # sorted(approx_list, key=lambda x:x[0][0]+x[0][1], reverse=True)
             m = cv.getPerspectiveTransform(approx_list, dst)
             warp = cv.warpPerspective(img, m, (200, 400))
             cv.imshow("Warped", warp)
             cv.imshow("AR", img2)
-    
-
 
     cv.waitKey(50)
