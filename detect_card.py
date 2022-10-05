@@ -21,6 +21,7 @@ ar_edges = [(0, 1), (1, 2), (2, 3), (3, 0),
 cv.namedWindow("Webcam")
 cv.namedWindow("Contours")
 cv.namedWindow("AR")
+cv.namedWindow("Warped")
 
 files = np.load(sys.argv[1])
 camera_matrix = files["camera_matrix"]
@@ -50,7 +51,6 @@ while True:
     clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     equalized = clahe.apply(blur)
 
-    print(equalized)
 
     # edges = cv.Canny(equalized, t1, t2)
     ret, edges = cv.threshold(equalized,200,255,cv.THRESH_BINARY)
@@ -112,6 +112,17 @@ while True:
                 (x0, y0), (x1, y1) = verts[i], verts[j]
                 if -10000 < x0 < 10000 and -10000 < x1 < 10000 and -10000 < y0 < 10000 and -10000 < y1 < 10000:
                     cv.line(img2, (int(x0), int(y0)), (int(x1), int(y1)), (0, 0, 255), 2)
+            dst = np.array([
+                    [0, 0],
+                    [200, 0],
+                    [200, 400],
+                    [0, 400]], dtype = "float32")
+
+            print(approx_list) 
+            sorted(approx_list, key=lambda x:x[0][0]+x[0][1], reverse=True)
+            m = cv.getPerspectiveTransform(approx_list, dst)
+            warp = cv.warpPerspective(img1, m, (200, 300))
+            cv.imshow("Warped", warp)
             cv.imshow("AR", img2)
     
 
