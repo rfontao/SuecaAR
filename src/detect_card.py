@@ -2,6 +2,7 @@ import cv2 as cv
 import math
 import numpy as np
 import sys
+from camera import Camera
 
 if (len(sys.argv) < 2):
     print(f"Usage: {sys.argv[0]} <file_to_read(.npz format)>")
@@ -23,27 +24,12 @@ cv.namedWindow("Contours")
 cv.namedWindow("AR")
 cv.namedWindow("Warped")
 
-files = np.load(sys.argv[1])
-camera_matrix = files["camera_matrix"]
-distortion_coefficient = files["distortion_coefficients"]
-
-
-t1 = 100
-t2 = 200
-
 # Capture video from webcam
-cap = cv.VideoCapture(0)
-if not cap.isOpened():
-    print("Can't open stream")
-    exit()
+camera = Camera(0, sys.argv[1])
 
 while True:
-    ret, img = cap.read()
+    img = camera.get_frame()
     detected = False
-
-    if not ret:
-        print("Can't receive frame (stream end?). Exiting ...")
-        exit()
 
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     blur = cv.GaussianBlur(gray, (5, 5), 0)
@@ -51,7 +37,7 @@ while True:
     clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     equalized = clahe.apply(blur)
 
-    # edges = cv.Canny(equalized, t1, t2)
+    # edges = cv.Canny(equalized, 100, 200)
     ret, edges = cv.threshold(equalized, 200, 255, cv.THRESH_BINARY)
 
     contours, hierarchy = cv.findContours(
@@ -59,26 +45,15 @@ while True:
     # contours = sorted(contours, key=cv.contourArea, reverse=True)
     # print(hierarchy)
 
-    filtered_contours = []
     approx_list = []
     for i in range(len(contours)):
         c = contours[i]
 
-        # Check if contour is inside another contour
-        # if hierarchy[0, i, 3] != -1:
-        #     continue
+        perimeter = cv.arcLength(c, True)
 
-        peri = cv.arcLength(c, True)
-        contourArea = cv.contourArea(c)
-
-        # Check if contour is closed
-        if contourArea <= cv.arcLength(c, True):
-            continue
-
-        approx = cv.approxPolyDP(c, 0.04 * peri, True)
+        approx = cv.approxPolyDP(c, 0.04 * perimeter, True)
         # Only append if has 4 sides
         if(len(approx) == 4):
-            filtered_contours.append(c)
             approx_list.append(approx)
             detected = True
 
@@ -97,13 +72,13 @@ while True:
         quad_3d = np.float32([[1, 1, 0], [0, 1, 0], [0, 0, 0], [1, 0, 0]])
         # approx_list = np.float32([approx_list[0][0],approx_list[0][1],approx_list[0][2],approx_list[0][3]])
         ret, rvec, tvec, _ = cv.solvePnPRansac(
-            quad_3d, approx_list, camera_matrix, distortion_coefficient)
+            quad_3d, approx_list, camera.matrix, camera.dist_coeffs)
 
         if ret == True:
 
             # verts = ar_verts * [(x1-x0), (y1-y0), -(x1-x0)*0.3] + (x0, y0, 0)
             verts = cv.projectPoints(
-                ar_verts, rvec, tvec, camera_matrix, distortion_coefficient)[0].reshape(-1, 2)
+                ar_verts, rvec, tvec, camera.matrix, camera.dist_coeffs)[0].reshape(-1, 2)
 
             img2 = img1.copy()
             for i, j in ar_edges:

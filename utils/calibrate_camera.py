@@ -3,11 +3,9 @@ import numpy as np
 import cv2 as cv
 
 # Taken from https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html
-
 if (len(sys.argv) < 2):
     print(f"Usage: {sys.argv[0]} <file_to_save(.npz format)>")
     exit()
-
 
 # termination criteria
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -19,7 +17,6 @@ objp[:, :2] = np.mgrid[0:9, 0:6].T.reshape(-1, 2)
 # Arrays to store object points and image points from all the images.
 objpoints = []  # 3d point in real world space
 imgpoints = []  # 2d points in image plane.
-
 
 cv.namedWindow("img")
 
