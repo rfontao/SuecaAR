@@ -32,7 +32,7 @@ t1 = 100
 t2 = 200
 
 # Capture video from webcam
-cap = cv.VideoCapture(2)
+cap = cv.VideoCapture(0)
 if not cap.isOpened():
     print("Can't open stream")
     exit()
@@ -51,12 +51,11 @@ while True:
     clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     equalized = clahe.apply(blur)
 
-
     # edges = cv.Canny(equalized, t1, t2)
     ret, edges = cv.threshold(equalized,200,255,cv.THRESH_BINARY)
 
     contours, hierarchy = cv.findContours(
-        edges, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        edges, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
     # contours = sorted(contours, key=cv.contourArea, reverse=True)
     # print(hierarchy)
 
@@ -66,8 +65,8 @@ while True:
         c = contours[i]
 
         # Check if contour is inside another contour
-        if hierarchy[0, i, 3] != -1:
-            continue
+        # if hierarchy[0, i, 3] != -1:
+        #     continue
 
         peri = cv.arcLength(c, True)
         contourArea = cv.contourArea(c)
@@ -118,10 +117,10 @@ while True:
                     [200, 400],
                     [0, 400]], dtype = "float32")
 
-            print(approx_list) 
-            sorted(approx_list, key=lambda x:x[0][0]+x[0][1], reverse=True)
+            # print(approx_list) 
+            # sorted(approx_list, key=lambda x:x[0][0]+x[0][1], reverse=True)
             m = cv.getPerspectiveTransform(approx_list, dst)
-            warp = cv.warpPerspective(img1, m, (200, 300))
+            warp = cv.warpPerspective(img, m, (200, 400))
             cv.imshow("Warped", warp)
             cv.imshow("AR", img2)
     
