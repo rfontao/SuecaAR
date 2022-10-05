@@ -1,0 +1,7 @@
+# Blender v2.79 (sub 0) OBJ File: ''
+# www.blender.org
+mtllib crate.mtl
+o Crate.001
+v 0.0 0.0 0.0
+v 0.0000000 0.0000000 0.00500000
+usemtl None

@@ -1,21 +1,15 @@
 import cv2 as cv
 import numpy as np
 
-ar_verts = np.float32([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0],
-                       [0, 0, 0.75], [0, 1, 0.75], [1, 1, 0.75], [1, 0, 0.75],
-                       [0, 0.5, 1.5], [1, 0.5, 1.5]])
-ar_edges = [(0, 1), (1, 2), (2, 3), (3, 0),
-            (4, 5), (5, 6), (6, 7), (7, 4),
-            (0, 4), (1, 5), (2, 6), (3, 7),
-            (4, 8), (5, 8), (6, 9), (7, 9), (8, 9)]
+from moderngl_test import HeadlessTest
+from pyrr import Matrix44
 
-# ar_verts = np.float32([[0, 0, 0], [0, 1, 0]])
-# ar_edges = [(0, 1)]
-
-ar_verts = ar_verts * 0.05
+from gl import draw_scene, initOpengl, load_model
 
 
-files = np.load("desktop_fontao.npz")
+
+
+files = np.load("../desktop_fontao.npz")
 camera_matrix = files["camera_matrix"]
 distortion_coefficient = files["distortion_coefficients"]
 
@@ -23,6 +17,12 @@ cap = cv.VideoCapture(0)
 if not cap.isOpened():
     print("Can't open stream")
     exit()
+
+ht = HeadlessTest()
+# ht.run()
+P = ht.intrinsic2Project(camera_matrix, 640, 480)
+
+print(P)
 
 while True:
     ret, img = cap.read()
@@ -47,12 +47,31 @@ while True:
         #     img = cv.drawFrameAxes(
         #         img, camera_matrix, distortion_coefficient, rvecs[i], tvecs[i], 0.05)
 
-        verts = cv.projectPoints(
-                ar_verts, rvecs[0], tvecs[0], camera_matrix, distortion_coefficient)[0].reshape(-1, 2)
-        for i, j in ar_edges:
-            (x0, y0), (x1, y1) = verts[i], verts[j]
-            if -10000 < x0 < 10000 and -10000 < x1 < 10000 and -10000 < y0 < 10000 and -10000 < y1 < 10000:
-                cv.line(img, (int(x0), int(y0)), (int(x1), int(y1)), (0, 0, 255), 2)
-                
+        T = ht.extrinsic2ModelView(rvecs[0], tvecs[0])
+
+        # ht.transform = P*T
+        # gl = ht.render()
+        # gl = np.array(gl) 
+        # cv.imshow("gl", gl)
+        # gl = cv.cvtColor(gl, cv.COLOR_RGBA2BGR)
+
+        # dst = cv.addWeighted(img, 0.5, gl, 0.5, 0)
+        # cv.imshow("Result", dst)
+
+        
+        # verts = cv.projectPoints(
+        #         ar_verts, rvecs[0], tvecs[0], camera_matrix, distortion_coefficient)[0].reshape(-1, 2)
+        # for i, j in ar_edges:
+        #     (x0, y0), (x1, y1) = verts[i], verts[j]
+        #     if -10000 < x0 < 10000 and -10000 < x1 < 10000 and -10000 < y0 < 10000 and -10000 < y1 < 10000:
+        #         cv.line(img, (int(x0), int(y0)), (int(x1), int(y1)), (0, 0, 255), 2)
+
+        initOpengl(640, 480)
+        load_model()
+        image = draw_scene(img, P, T)
+
+
+
+
     cv.imshow("Aruco", img)
     cv.waitKey(50)

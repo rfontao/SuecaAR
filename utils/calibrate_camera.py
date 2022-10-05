@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import cv2 as cv
 
+
 # Taken from https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html
 if (len(sys.argv) < 2):
     print(f"Usage: {sys.argv[0]} <file_to_save(.npz format)>")
@@ -21,7 +22,7 @@ imgpoints = []  # 2d points in image plane.
 cv.namedWindow("img")
 
 # Capture video from webcam
-cap = cv.VideoCapture(2)
+cap = cv.VideoCapture(0)
 if not cap.isOpened():
     print("Can't open stream")
     exit()
