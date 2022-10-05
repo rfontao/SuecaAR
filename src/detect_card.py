@@ -23,7 +23,6 @@ while True:
             [200, 400],
             [0, 400]], dtype="float32")
 
-        # sorted(approx_list, key=lambda x:x[0][0]+x[0][1], reverse=True)
         M = cv.getPerspectiveTransform(cards[0], dst)
         warp = cv.warpPerspective(frame, M, (200, 400))
         cv.imshow("Warped", warp)
