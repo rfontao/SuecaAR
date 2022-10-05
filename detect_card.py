@@ -1,6 +1,12 @@
 import cv2 as cv
 import math
 import numpy as np
+import sys
+
+if (len(sys.argv) < 2):
+    print(f"Usage: {sys.argv[0]} <file_to_read(.npz format)>")
+    exit()
+
 
 # Taken from https://github.com/opencv/opencv/blob/4.x/samples/python/plane_ar.py
 ar_verts = np.float32([[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0],
@@ -16,7 +22,7 @@ cv.namedWindow("Webcam")
 cv.namedWindow("Contours")
 cv.namedWindow("AR")
 
-files = np.load("desktop_fontao.npz")
+files = np.load(sys.argv[1])
 camera_matrix = files["camera_matrix"]
 distortion_coefficient = files["distortion_coefficients"]
 
@@ -44,7 +50,10 @@ while True:
     clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     equalized = clahe.apply(blur)
 
-    edges = cv.Canny(equalized, t1, t2)
+    print(equalized)
+
+    # edges = cv.Canny(equalized, t1, t2)
+    ret, edges = cv.threshold(equalized,200,255,cv.THRESH_BINARY)
 
     contours, hierarchy = cv.findContours(
         edges, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
