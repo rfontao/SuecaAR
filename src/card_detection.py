@@ -5,9 +5,19 @@ import numpy as np
 class CardDetector():
 
     def __init__(self, debug=False):
+        self.t1 = 200
+        self.t2 = 255
+        self.area_threshold = 1000
+
         self.debug = debug
         if self.debug:
             cv.namedWindow("Card detection")
+            cv.createTrackbar("Threshold 1", "Card detection",
+                              self.t1, 255, self.changeThreshold1Callback)
+            cv.createTrackbar("Threshold 2", "Card detection",
+                              self.t2, 255, self.changeThreshold2Callback)
+            cv.createTrackbar("Area Threshold", "Card detection",
+                              self.area_threshold, 1000, self.changeAreaThresholdCallback)
 
     def detect(self, image):
 
@@ -20,7 +30,7 @@ class CardDetector():
         equalized = clahe.apply(blur)
 
         # Applying threshold for edge detection
-        _, edges = cv.threshold(equalized, 200, 255, cv.THRESH_BINARY)
+        _, edges = cv.threshold(equalized, self.t1, self.t2, cv.THRESH_BINARY)
 
         # Finding contours with RETR_EXTERNAL (does not include elements inside the card)
         contours, _ = cv.findContours(
@@ -30,6 +40,15 @@ class CardDetector():
         for c in contours:
             perimeter = cv.arcLength(c, True)
             approx = cv.approxPolyDP(c, 0.04 * perimeter, True)
+
+            # Check if it's convex
+            if not cv.isContourConvex(approx):
+                continue
+
+            # Threshold area
+            area = cv.contourArea(approx)
+            if area < self.area_threshold:
+                continue
 
             # Check if contour has 4 sides
             if len(approx) == 4:
@@ -49,3 +68,12 @@ class CardDetector():
             cv.imshow("Card detection", debug_image)
 
         return np.array(matches, dtype=np.float32)
+
+    def changeThreshold1Callback(self, val):
+        self.t1 = val
+
+    def changeThreshold2Callback(self, val):
+        self.t2 = val
+    
+    def changeAreaThresholdCallback(self, val):
+        self.area_threshold = val
