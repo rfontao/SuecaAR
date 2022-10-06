@@ -233,7 +233,7 @@ class HeadlessTest():
         transform_matrix = Rx @ np.hstack((R, TVEC))
         M = np.eye(4)
         M[:3, :] = transform_matrix
-        print(M)
+        # print(M)
         return M.T.flatten()
 
     def intrinsic2Project(self, MTX, width, height, near_plane=0.01, far_plane=1000.0):

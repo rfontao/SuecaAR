@@ -1,22 +1,27 @@
 import pygame
 from OpenGL.GL import *
 
-def MTL(filename):
+# Taken from https://github.com/BryceQing/OPENCV_AR/blob/master/objloader.py
+def MTL(dir, filename):
     contents = {}
     mtl = None
-    for line in open(filename, "r"):
+    for line in open(dir + filename, "r"):
         if line.startswith('#'): continue
         values = line.split()
         if not values: continue
         if values[0] == 'newmtl':
             mtl = contents[values[1]] = {}
+        elif mtl is None:
+            raise (ValueError, "mtl file doesn't start with newmtl stmt")
         elif values[0] == 'map_Kd':
             # load the texture referred to by this declaration
-            mtl[values[0]] = values[1]
+            mtl[values[0]] = dir + values[1]
             surf = pygame.image.load(mtl['map_Kd'])
             image = pygame.image.tostring(surf, 'RGBA', 1)
             ix, iy = surf.get_rect().size
             texid = mtl['texture_Kd'] = glGenTextures(1)
+            # print('texid', texid)
+            # texid = 10
             glBindTexture(GL_TEXTURE_2D, texid)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                 GL_LINEAR)
@@ -25,11 +30,15 @@ def MTL(filename):
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ix, iy, 0, GL_RGBA,
                 GL_UNSIGNED_BYTE, image)
         else:
-            mtl[values[0]] = map(float, values[1:])
+            mtl[values[0]] = list(map(float, values[1:]))
     return contents
 
+# TODO load more format models
 class OBJ:
     def __init__(self, filename, swapyz=False):
+        
+        self.dir = filename[: filename.rfind('/') + 1]        
+        
         """Loads a Wavefront OBJ file. """
         self.vertices = []
         self.normals = []
@@ -42,21 +51,22 @@ class OBJ:
             values = line.split()
             if not values: continue
             if values[0] == 'v':
-                v = map(float, values[1:4])
+                v = list(map(float, values[1:4]))
                 if swapyz:
                     v = v[0], v[2], v[1]
                 self.vertices.append(v)
             elif values[0] == 'vn':
-                v = map(float, values[1:4])
+                v = list(map(float, values[1:4]))
                 if swapyz:
                     v = v[0], v[2], v[1]
                 self.normals.append(v)
             elif values[0] == 'vt':
-                self.texcoords.append(map(float, values[1:3]))
+                self.texcoords.append(list(map(float, values[1:3])))
             elif values[0] in ('usemtl', 'usemat'):
                 material = values[1]
+                # print('debug values', values[1])
             elif values[0] == 'mtllib':
-                self.mtl = MTL(values[1])
+                self.mtl = MTL(self.dir, values[1])
             elif values[0] == 'f':
                 face = []
                 texcoords = []
@@ -76,26 +86,26 @@ class OBJ:
 
         self.gl_list = glGenLists(1)
         glNewList(self.gl_list, GL_COMPILE)
-        glEnable(GL_TEXTURE_2D)
         glFrontFace(GL_CCW)
         for face in self.faces:
             vertices, normals, texture_coords, material = face
-
             mtl = self.mtl[material]
             if 'texture_Kd' in mtl:
                 # use diffuse texmap
                 glBindTexture(GL_TEXTURE_2D, mtl['texture_Kd'])
             else:
                 # just use diffuse colour
-                glColor(*mtl['Kd'])
-
-            glBegin(GL_POLYGON)
+                glColor3f(*mtl['Kd'])
+            glBegin(GL_POLYGON)            
             for i in range(len(vertices)):
                 if normals[i] > 0:
                     glNormal3fv(self.normals[normals[i] - 1])
-                if texture_coords[i] > 0:
+                if texture_coords[i] > 0 and 'texture_Kd' in mtl:
                     glTexCoord2fv(self.texcoords[texture_coords[i] - 1])
                 glVertex3fv(self.vertices[vertices[i] - 1])
             glEnd()
-        glDisable(GL_TEXTURE_2D)
+        glColor3f(1.0,1.0,1.0) # Clear the painting color.
         glEndList()
+
+    def render(self):
+        glCallList(self.gl_list)
