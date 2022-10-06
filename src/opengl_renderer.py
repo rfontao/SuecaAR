@@ -8,6 +8,8 @@ import numpy as np
 from objloader import OBJ
 
 # See https://github.com/BryceQing/OPENCV_AR/blob/master/AR_entrance.py
+
+
 class OpenGLRenderer():
 
     def __init__(self, camera_matrix, width, height, pos_x=500, pos_y=500, window_name=b'ARSueca'):
@@ -22,7 +24,6 @@ class OpenGLRenderer():
         glutDisplayFunc(self.draw_scene)
         glutIdleFunc(self.draw_scene)
 
-
         glClearColor(0.0, 0.0, 0.0, 0.0)
         glClearDepth(1.0)
         glShadeModel(GL_SMOOTH)
@@ -36,8 +37,9 @@ class OpenGLRenderer():
         glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.5, 0.5, 0.5, 1))
 
         # OpenCV intrinsic
-        self.projection = OpenGLRenderer.intrinsic2Projection(camera_matrix, width, height)
-        
+        self.projection = OpenGLRenderer.intrinsic2Projection(
+            camera_matrix, width, height)
+
         self.rvec = None
         self.tvec = None
         self.image = None
@@ -61,13 +63,10 @@ class OpenGLRenderer():
         # glTranslatef(self.translate_x, self.translate_y, self.translate_y)
         self.model.render()
 
-
-
     def draw_scene(self):
         self.draw_background()  # Draw Webcam image
         self.draw_object()  # Draw objects
         glutSwapBuffers()
-
 
     def draw_background(self):
 
@@ -94,7 +93,7 @@ class OpenGLRenderer():
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0,
-                        GL_RGBA, GL_UNSIGNED_BYTE, img)
+                     GL_RGBA, GL_UNSIGNED_BYTE, img)
 
         glTranslatef(0.0, 0.0, -10.0)
         glBegin(GL_QUADS)
