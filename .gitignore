@@ -131,3 +131,5 @@ dmypy.json
 
 desktop_fontao.npz
 padoru_cam.npz
+
+.vscode
