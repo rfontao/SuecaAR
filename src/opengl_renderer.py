@@ -1,4 +1,3 @@
-import OpenGL
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
@@ -6,6 +5,7 @@ from PIL import Image
 import cv2 as cv
 import numpy as np
 from objloader import OBJ
+from model import Model
 
 # See https://github.com/BryceQing/OPENCV_AR/blob/master/AR_entrance.py
 
@@ -40,16 +40,14 @@ class OpenGLRenderer():
         self.projection = OpenGLRenderer.intrinsic2Projection(
             camera_matrix, width, height)
 
-        self.rvec = None
-        self.tvec = None
         self.image = None
-        self.model = None
+        self.models = []
+        self.aruco_ids = []
+        self.rvecs = []
+        self.tvecs = []
 
-    def load_model(self, path):
-        self.model = OBJ(path, swapyz=True)
-
-    def draw_object(self):
-        model_view = OpenGLRenderer.extrinsic2ModelView(self.rvec, self.tvec)
+    def draw_model(self, model, rvec, tvec):
+        model_view = OpenGLRenderer.extrinsic2ModelView(rvec, tvec)
 
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
@@ -59,13 +57,20 @@ class OpenGLRenderer():
         glLoadIdentity()
         glLoadMatrixf(model_view)
 
-        glScaled(0.01, 0.01, 0.01)
-        # glTranslatef(self.translate_x, self.translate_y, self.translate_y)
-        self.model.render()
+        glScaled(*model.scale)
+        glTranslatef(*model.translation)
+        model.render()
 
     def draw_scene(self):
-        self.draw_background()  # Draw Webcam image
-        self.draw_object()  # Draw objects
+        # Draw Webcam image
+        self.draw_background()
+
+        # Draw objects
+        for i in range(len(self.aruco_ids)):
+            for model in self.models:
+                if self.aruco_ids[i] == model.aruco_id:
+                    self.draw_model(model, self.rvecs[i], self.tvecs[i])
+
         glutSwapBuffers()
 
     def draw_background(self):

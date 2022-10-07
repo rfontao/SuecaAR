@@ -24,3 +24,9 @@ class Camera():
             exit()
 
         return frame
+
+    def get_width(self):
+        return self.capture.get(cv.CAP_PROP_FRAME_WIDTH)
+
+    def get_height(self):
+        return self.capture.get(cv.CAP_PROP_FRAME_HEIGHT)
