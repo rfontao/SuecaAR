@@ -14,11 +14,6 @@ files = np.load("../desktop_fontao.npz")
 camera_matrix = files["camera_matrix"]
 distortion_coefficient = files["distortion_coefficients"]
 
-cap = cv.VideoCapture(0)
-if not cap.isOpened():
-    print("Can't open stream")
-    exit()
-
 camera = Camera(0, sys.argv[1])
 if USE_OPENGL:
     renderer = OpenGLRenderer(
