@@ -7,7 +7,7 @@ class Camera():
     def __init__(self, source, parameters_file):
         self.load_parameters(parameters_file)
 
-        self.capture = cv.VideoCapture(source)
+        self.capture = cv.VideoCapture(int(source))
         if not self.capture.isOpened():
             print("Can't open video stream. Exiting...")
             exit()

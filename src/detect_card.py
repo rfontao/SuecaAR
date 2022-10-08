@@ -9,7 +9,7 @@ if (len(sys.argv) < 2):
     exit()
 
 # Capture video from webcam
-camera = Camera(0, sys.argv[1])
+camera = Camera(sys.argv[2], sys.argv[1])
 detector = CardDetector(True)
 
 template = cv.imread("../cards/simple/4d.jpg", cv.IMREAD_COLOR)
@@ -25,7 +25,7 @@ while True:
             [200, 400],
             [0, 400]], dtype="float32")
 
-        M = cv.getPerspectiveTransform(cards[0], dst)
+        M = cv.getPerspectiveTransform(detector.sortCardPoints(cards[0]), dst)
         warp = cv.warpPerspective(frame, M, (200, 400))
         cv.imshow("Warped", warp)
 

@@ -1,3 +1,6 @@
+
+from copyreg import constructor
+from dis import dis
 import cv2 as cv
 import numpy as np
 
@@ -45,6 +48,7 @@ class CardDetector():
             if not cv.isContourConvex(approx):
                 continue
 
+
             # Threshold area
             area = cv.contourArea(approx)
             if area < self.area_threshold:
@@ -77,3 +81,36 @@ class CardDetector():
     
     def changeAreaThresholdCallback(self, val):
         self.area_threshold = val
+
+    def sortCardPoints(self, cardPoints):
+        l = list(cardPoints)
+        l.sort(key=lambda p: p[0][0] + p[0][1])
+        cardPoints = np.array(l)
+        dist1 = np.linalg.norm(cardPoints[0] - cardPoints[1])
+        dist2 = np.linalg.norm(cardPoints[0] - cardPoints[2])
+        dist3 = np.linalg.norm(cardPoints[0] - cardPoints[3])
+        sortedDists = sorted([dist1, dist2, dist3])
+        ret = np.array([cardPoints[0]])
+        
+        if(dist1 == sortedDists[0]):
+            ret = np.append(ret, [cardPoints[1]], axis=0)
+            if(dist2 == sortedDists[1]):
+                ret = np.append(ret, [cardPoints[3], cardPoints[2]], axis=0)
+            else:
+                ret = np.append(ret, [cardPoints[2], cardPoints[3]], axis=0)
+
+        elif(dist2 == sortedDists[0]):
+            ret = np.append(ret, [cardPoints[2]], axis=0)
+            if(dist1 == sortedDists[1]):
+                ret = np.append(ret, [cardPoints[3], cardPoints[1]], axis=0)
+            else:
+                ret = np.append(ret, [cardPoints[1], cardPoints[3]], axis=0)
+
+        elif(dist3 == sortedDists[0]):
+            ret = np.append(ret, [cardPoints[3]], axis=0)
+            if(dist1 == sortedDists[1]):
+                ret = np.append(ret, [cardPoints[2], cardPoints[1]], axis=0)
+            else:
+                ret = np.append(ret, [cardPoints[1], cardPoints[2]], axis=0)
+        
+        return ret
