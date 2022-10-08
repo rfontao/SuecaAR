@@ -1,4 +1,5 @@
 from copyreg import constructor
+from email.mime import image
 import cv2 as cv
 import numpy as np
 import sys
@@ -14,13 +15,12 @@ if (len(sys.argv) < 2):
 camera = Camera(sys.argv[2], sys.argv[1])
 detector = CardDetector(True)
 
-template = cv.imread("../cards/full/1.png", cv.IMREAD_COLOR)
-template = template[0:200, 0:100]
-templateVal = template[5:90, 10:900] # gets the value of the card
-templateType = template[90:200, 10:90] # gets the type of the card
+cardimg = cv.imread("../cards/full/5.png", cv.IMREAD_COLOR)
+cardVal = cardimg[5:90, 10:900] # gets the value of the card
+cardType = cardimg[90:200, 10:90] # gets the type of the card
 
-cv.imshow("TemplateVal", templateVal)
-cv.imshow("TemplateType", templateType)
+cv.imshow("CardVal", cardVal)
+cv.imshow("CardType", cardType)
 
 while True:
     frame = camera.get_frame()
@@ -29,42 +29,45 @@ while True:
     if len(cards) > 0:
         dst = np.array([
             [0, 0],
-            [200, 0],
-            [200, 400],
-            [0, 400]], dtype="float32")
+            [500, 0],
+            [500, 726],
+            [0, 726]], dtype="float32")
 
         M = cv.getPerspectiveTransform(detector.sortCardPoints(cards[0]), dst)
-        warp = cv.warpPerspective(frame, M, (200, 400))
+        warp = cv.warpPerspective(frame, M, (500, 726))
+
+        cv.imshow("Warp", warp)
+
 
         # cv.imshow("Warped", warp)
-        cropped = warp[0:int(warp.shape[0]/4), 0:int(warp.shape[1]/6)]
+        template = warp[0:int(warp.shape[0]/4), 0:int(warp.shape[1]/6)]
 
-        cropped = cv.GaussianBlur(cropped, (5, 5), 0)
+        template = cv.GaussianBlur(template, (5, 5), 0)
 
-        croppedVal = warp[0:50, 0:40]
-        croppedType = warp[50:100, 0:40]
+        # templateVal = warp[0:50, 0:40]
+        # templateType = warp[50:100, 0:40]
 
-        cv.imshow("Cropped", cropped)
-        cv.imshow("Val", croppedVal)
-        cv.imshow("Type", croppedType)
+        cv.imshow("template", template)
+        # cv.imshow("Val", templateVal)
+        # cv.imshow("Type", templateType)
 
         method = cv.TM_CCOEFF_NORMED
     
-        resultType = cv.matchTemplate(croppedType, templateType, method)
-        resultVal = cv.matchTemplate(croppedVal, templateVal, method)
+        resultType = cv.matchTemplate(template, cardimg, method)
+        # resultVal = cv.matchTemplate(templateVal, cardimg, method)
 
         # cv.normalize(result, result, 0, 1, cv.NORM_MINMAX, -1)
         _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(resultType)
-        if(_maxVal < 0.6):
+        if(_maxVal < 0.8):
             print("Not Match Type: " + str(_maxVal))
             cv.waitKey(1000)
             continue
 
-        _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(resultVal)
-        if(_maxVal < 0.6):
-            print("Not Match Val " + str(_maxVal))
-            cv.waitKey(1000)
-            continue
+        # _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(resultVal)
+        # if(_maxVal < 0.8):
+        #     print("Not Match Val " + str(_maxVal))
+        #     cv.waitKey(1000)
+        #     continue
         
         print("Match " + str(_maxVal))
 
