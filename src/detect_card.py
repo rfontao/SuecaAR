@@ -16,7 +16,7 @@ camera = Camera(sys.argv[2], sys.argv[1])
 detector = CardDetector(True)
 
 cardimg = cv.imread("../cards/full/5.png", cv.IMREAD_COLOR)
-cardVal = cardimg[5:90, 10:900] # gets the value of the card
+cardVal = cardimg[5:90, 10:90] # gets the value of the card
 cardType = cardimg[90:200, 10:90] # gets the type of the card
 
 cv.imshow("CardVal", cardVal)
@@ -58,7 +58,7 @@ while True:
 
         # cv.normalize(result, result, 0, 1, cv.NORM_MINMAX, -1)
         _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(resultType)
-        if(_maxVal < 0.8):
+        if(_maxVal < 0.9):
             print("Not Match Type: " + str(_maxVal))
             cv.waitKey(1000)
             continue
@@ -71,16 +71,19 @@ while True:
         
         print("Match " + str(_maxVal))
 
-        # if (method == cv.TM_SQDIFF or method == cv.TM_SQDIFF_NORMED):
-        #     matchLoc = minLoc
-        # else:
-        #     matchLoc = maxLoc
+        if (method == cv.TM_SQDIFF or method == cv.TM_SQDIFF_NORMED):
+            matchLoc = minLoc
+        else:
+            matchLoc = maxLoc
         
-        # cv.rectangle(template, matchLoc, (matchLoc[0] + template.shape[0],
-        #             matchLoc[1] + template.shape[1]), 255, 2)
+        copy = cardimg.copy()
+
+        cv.rectangle(copy, matchLoc, (matchLoc[0] + template.shape[0],
+                    matchLoc[1] + copy.shape[1]), 255, 2)
 
         cv.imshow("Template", template)            
         cv.imshow("Original", frame)
         cv.imshow("Matching", resultType)
+        cv.imshow("Match", copy)
 
     cv.waitKey(1000)
