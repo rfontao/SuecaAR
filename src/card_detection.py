@@ -1,7 +1,9 @@
 
+from audioop import cross
 from copyreg import constructor
 from dis import dis
 from time import sleep
+from xmlrpc.client import MAXINT
 import cv2 as cv
 import numpy as np
 
@@ -83,45 +85,50 @@ class CardDetector():
     def changeAreaThresholdCallback(self, val):
         self.area_threshold = val
 
+    def lineIntersection(self, pair1, pair2):
+        pairs = np.vstack([pair1, pair2])
+        pairs = np.hstack([pairs, np.ones((4,1))])
+        l1 = np.cross(pairs[0], pairs[1])
+        l2 = np.cross(pairs[2], pairs[3])
+        x, y, z = np.cross(l1, l2)
+        if(z == 0):
+            return np.inf, np.inf
+        return x/z, y/z
+
+    def inSecondAndThirdQuadrant(self, angle1, angle2):
+        return angle1 > (np.pi/2) and angle2 < (-np.pi/2)
+
     def sortCardPoints(self, cardPoints):
-        dist1 = np.linalg.norm(cardPoints[0] - cardPoints[1])
-        dist2 = np.linalg.norm(cardPoints[0] - cardPoints[2])
-        dist3 = np.linalg.norm(cardPoints[0] - cardPoints[3])
-        sortedDists = sorted([dist1, dist2, dist3])
-        ret = np.array([cardPoints[0]])
+        distDict = {}
+        distDict[np.linalg.norm(cardPoints[0][0] - cardPoints[1][0])] = cardPoints[1]
+        distDict[np.linalg.norm(cardPoints[0][0] - cardPoints[2][0])] = cardPoints[2]
+        distDict[np.linalg.norm(cardPoints[0][0] - cardPoints[3][0])] = cardPoints[3]
+
+        sortedDists = sorted(distDict)
+        pair1 = [cardPoints[0][0], distDict[sortedDists[2]][0]]
+        pair2 = [distDict[sortedDists[0]][0], distDict[sortedDists[1]][0]]
+
+        x, y = self.lineIntersection(pair1, pair2)
         
-        if(dist1 == sortedDists[0]):
-            if(cardPoints[1][0][0] < cardPoints[0][0][0]):
-                cardPoints[0], cardPoints[1] = np.copy(cardPoints[1]), np.copy(cardPoints[0])
-                return self.sortCardPoints(cardPoints)
-            ret = np.append(ret, [cardPoints[1]], axis=0)
-            if(dist2 == sortedDists[1]):
-                ret = np.append(ret, [cardPoints[3], cardPoints[2]], axis=0)
-            else:
-                ret = np.append(ret, [cardPoints[2], cardPoints[3]], axis=0)
+        center = [x,y]
+        vec1 = cardPoints[0][0] - center
+        vec2 = distDict[sortedDists[0]][0] - center
+        angle1 = np.arctan2(-vec1[1], vec1[0])
+        angle2 = np.arctan2(-vec2[1], vec2[0])
 
-        elif(dist2 == sortedDists[0]):
 
-            if(cardPoints[2][0][0] < cardPoints[0][0][0]):
-                cardPoints[0], cardPoints[2] = np.copy(cardPoints[2]), np.copy(cardPoints[0])
-                return self.sortCardPoints(cardPoints)
-
-            ret = np.append(ret, [cardPoints[2]], axis=0)
-            if(dist1 == sortedDists[1]):
-                ret = np.append(ret, [cardPoints[3], cardPoints[1]], axis=0)
-            else:
-                ret = np.append(ret, [cardPoints[1], cardPoints[3]], axis=0)
-
-        elif(dist3 == sortedDists[0]):
-
-            if(cardPoints[3][0][0] < cardPoints[0][0][0]):
-                cardPoints[0], cardPoints[3] = np.copy(cardPoints[3]), np.copy(cardPoints[0])
-                return self.sortCardPoints(cardPoints)
-
-            ret = np.append(ret, [cardPoints[3]], axis=0)
-            if(dist1 == sortedDists[1]):
-                ret = np.append(ret, [cardPoints[2], cardPoints[1]], axis=0)
-            else:
-                ret = np.append(ret, [cardPoints[1], cardPoints[2]], axis=0)
+        if(self.inSecondAndThirdQuadrant(angle1, angle2)):
+            angle2 = angle2 + 2*np.pi
+        elif((angle1 > -np.pi and angle1 < -np.pi/2) or (angle2 > -np.pi and angle2 < -np.pi/2)):
+            angle1 = (angle1 + np.pi)
+            angle2 = (angle2 + np.pi)
+        elif((angle1 > -np.pi/2 and angle1 < 0) or (angle2 > -np.pi/2 and angle2 < 0)):
+            angle1 = angle1 + np.pi/2
+            angle2 = angle2 + np.pi/2
         
-        return ret
+
+
+        if(angle1 > angle2):
+            return (np.array([cardPoints[0], distDict[sortedDists[0]], distDict[sortedDists[2]], distDict[sortedDists[1]]]), center)
+        else:
+            return (np.array([ distDict[sortedDists[0]], cardPoints[0], distDict[sortedDists[1]],  distDict[sortedDists[2]]]), center)
