@@ -19,8 +19,8 @@ cardimg = cv.imread("../cards/full/5.png", cv.IMREAD_COLOR)
 cardVal = cardimg[5:90, 10:90] # gets the value of the card
 cardType = cardimg[90:200, 10:90] # gets the type of the card
 
-# cv.imshow("CardVal", cardVal)
-# cv.imshow("CardType", cardType)
+cv.imshow("CardVal", cardVal)
+cv.imshow("CardType", cardType)
 
 while True:
     frame = camera.get_frame()
@@ -33,10 +33,9 @@ while True:
             [500, 726],
             [0, 726]], dtype="float32")
 
-        sortedPoints = detector.sortCardPoints(cards[0])
-        M = cv.getPerspectiveTransform(sortedPoints, dst)
+        M = cv.getPerspectiveTransform(detector.sortCardPoints(cards[0]), dst)
         warp = cv.warpPerspective(frame, M, (500, 726))
-        print(sortedPoints)
+
         cv.imshow("Warp", warp)
 
 
@@ -48,7 +47,7 @@ while True:
         # templateVal = warp[0:50, 0:40]
         # templateType = warp[50:100, 0:40]
 
-        # cv.imshow("template", template)
+        cv.imshow("template", template)
         # cv.imshow("Val", templateVal)
         # cv.imshow("Type", templateType)
 
@@ -58,14 +57,10 @@ while True:
         # resultVal = cv.matchTemplate(templateVal, cardimg, method)
 
         # cv.normalize(result, result, 0, 1, cv.NORM_MINMAX, -1)
-        x, y = sortedPoints[0][0]
-        frame = cv.circle(frame, (int(x), int(y)) , 2, (255, 0, 0), 2)
-        cv.imshow("Original", frame)
-
         _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(resultType)
         if(_maxVal < 0.9):
-            # print("Not Match Type: " + str(_maxVal))
-            cv.waitKey(500)
+            print("Not Match Type: " + str(_maxVal))
+            cv.waitKey(1000)
             continue
 
         # _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(resultVal)
@@ -86,8 +81,9 @@ while True:
         cv.rectangle(copy, matchLoc, (matchLoc[0] + template.shape[0],
                     matchLoc[1] + copy.shape[1]), 255, 2)
 
-        # cv.imshow("Template", template)            
-        # cv.imshow("Matching", resultType)
-        # cv.imshow("Match", copy)
+        cv.imshow("Template", template)            
+        cv.imshow("Original", frame)
+        cv.imshow("Matching", resultType)
+        cv.imshow("Match", copy)
 
-    cv.waitKey(500)
+    cv.waitKey(1000)
