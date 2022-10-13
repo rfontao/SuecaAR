@@ -1,6 +1,7 @@
 
 from copyreg import constructor
 from dis import dis
+from time import sleep
 import cv2 as cv
 import numpy as np
 
@@ -83,9 +84,6 @@ class CardDetector():
         self.area_threshold = val
 
     def sortCardPoints(self, cardPoints):
-        l = list(cardPoints)
-        l.sort(key=lambda p: p[0][0] + p[0][1])
-        cardPoints = np.array(l)
         dist1 = np.linalg.norm(cardPoints[0] - cardPoints[1])
         dist2 = np.linalg.norm(cardPoints[0] - cardPoints[2])
         dist3 = np.linalg.norm(cardPoints[0] - cardPoints[3])
@@ -93,6 +91,9 @@ class CardDetector():
         ret = np.array([cardPoints[0]])
         
         if(dist1 == sortedDists[0]):
+            if(cardPoints[1][0][0] < cardPoints[0][0][0]):
+                cardPoints[0], cardPoints[1] = np.copy(cardPoints[1]), np.copy(cardPoints[0])
+                return self.sortCardPoints(cardPoints)
             ret = np.append(ret, [cardPoints[1]], axis=0)
             if(dist2 == sortedDists[1]):
                 ret = np.append(ret, [cardPoints[3], cardPoints[2]], axis=0)
@@ -100,6 +101,11 @@ class CardDetector():
                 ret = np.append(ret, [cardPoints[2], cardPoints[3]], axis=0)
 
         elif(dist2 == sortedDists[0]):
+
+            if(cardPoints[2][0][0] < cardPoints[0][0][0]):
+                cardPoints[0], cardPoints[2] = np.copy(cardPoints[2]), np.copy(cardPoints[0])
+                return self.sortCardPoints(cardPoints)
+
             ret = np.append(ret, [cardPoints[2]], axis=0)
             if(dist1 == sortedDists[1]):
                 ret = np.append(ret, [cardPoints[3], cardPoints[1]], axis=0)
@@ -107,6 +113,11 @@ class CardDetector():
                 ret = np.append(ret, [cardPoints[1], cardPoints[3]], axis=0)
 
         elif(dist3 == sortedDists[0]):
+
+            if(cardPoints[3][0][0] < cardPoints[0][0][0]):
+                cardPoints[0], cardPoints[3] = np.copy(cardPoints[3]), np.copy(cardPoints[0])
+                return self.sortCardPoints(cardPoints)
+
             ret = np.append(ret, [cardPoints[3]], axis=0)
             if(dist1 == sortedDists[1]):
                 ret = np.append(ret, [cardPoints[2], cardPoints[1]], axis=0)
