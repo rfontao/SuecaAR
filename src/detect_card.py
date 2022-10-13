@@ -5,7 +5,7 @@ import numpy as np
 import sys
 from camera import Camera
 from card_detection import CardDetector
-import imutils # used to resize image
+import imutils  # used to resize image
 
 if (len(sys.argv) < 2):
     print(f"Usage: {sys.argv[0]} <file_to_read(.npz format)>")
@@ -16,8 +16,11 @@ camera = Camera(sys.argv[2], sys.argv[1])
 detector = CardDetector(True)
 
 cardimg = cv.imread("../cards/full/5.png", cv.IMREAD_COLOR)
-cardVal = cardimg[5:90, 10:90] # gets the value of the card
-cardType = cardimg[90:200, 10:90] # gets the type of the card
+cardVal = cardimg[15:85, 25:75]  # gets the value of the card
+cardVal = cv.cvtColor(cardVal, cv.COLOR_BGR2GRAY)
+_, cardVal = cv.threshold(cardVal, 225, 255, cv.THRESH_BINARY)
+
+cardType = cardimg[90:200, 10:90]  # gets the type of the card
 
 cv.imshow("CardVal", cardVal)
 cv.imshow("CardType", cardType)
@@ -38,29 +41,61 @@ while True:
 
         cv.imshow("Warp", warp)
 
-
         # cv.imshow("Warped", warp)
         template = warp[0:int(warp.shape[0]/4), 0:int(warp.shape[1]/6)]
 
         template = cv.GaussianBlur(template, (5, 5), 0)
 
-        # templateVal = warp[0:50, 0:40]
-        # templateType = warp[50:100, 0:40]
+        templateVal = warp[0:90, 0:80]
+        templateType = warp[90:200, 0:80]
+
+        t1 = templateVal.copy()
+        templateVal = cv.cvtColor(templateVal, cv.COLOR_BGR2GRAY)
+        templateVal = cv.GaussianBlur(templateVal, (5, 5), 0)
+        _, templateVal = cv.threshold(templateVal, 225, 255, cv.THRESH_BINARY)
+
+        # Test later with erosions (from: https://repositorio-aberto.up.pt/bitstream/10216/59981/1/000146528.pdf)
+        # kernel = np.ones((3, 3), np.uint8)
+        # templateVal = cv.erode(templateVal, kernel, iterations=1)
+
+        # templateVal = cv.bitwise_not(templateVal)
+        contours, _ = cv.findContours(
+            templateVal, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv.contourArea, reverse=True)
+        if len(contours) > 1:
+            rect = cv.boundingRect(contours[1])
+            # t1 = cv.rectangle(t1, (int(rect[0]), int(rect[1])), (int(
+            #     rect[0] + rect[2]), int(rect[1] + rect[3])), (0, 0, 255), 3)
+
+            # print(len(contours))
+            # t1 = cv.drawContours(t1, contours, -1, (0, 255, 0), 2)
+
+            templateVal = templateVal[rect[1]:rect[1]+rect[3], rect[0]:rect[0]+rect[2]]
+
+        templateVal = cv.resize(
+            templateVal, (cardVal.shape[1], cardVal.shape[0]), interpolation=cv.INTER_LINEAR)
+
+        # templateVal = cv.cvtColor(templateVal, cv.COLOR_BGR2GRAY)
+        # _, templateVal = cv.threshold(templateVal, 200, 255, cv.THRESH_BINARY)
+        # coords = cv.findNonZero(templateVal)
+        # x, y, w, h = cv.boundingRect(coords)
+        # templateVal = templateVal[y:y+h, x:x+w]
 
         cv.imshow("template", template)
-        # cv.imshow("Val", templateVal)
-        # cv.imshow("Type", templateType)
+        cv.imshow("Val", templateVal)
+        cv.imshow("Type", templateType)
 
-        method = cv.TM_CCOEFF_NORMED
-    
-        resultType = cv.matchTemplate(template, cardimg, method)
-        # resultVal = cv.matchTemplate(templateVal, cardimg, method)
+        # method = cv.TM_CCOEFF_NORMED
+        method = cv.TM_SQDIFF_NORMED
+
+        # resultType = cv.matchTemplate(template, cardimg, method)
+        resultType = cv.matchTemplate(templateVal, cardVal, method)
 
         # cv.normalize(result, result, 0, 1, cv.NORM_MINMAX, -1)
         _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(resultType)
-        if(_maxVal < 0.9):
-            print("Not Match Type: " + str(_maxVal))
-            cv.waitKey(1000)
+        if(_minVal > 0.45):
+            print("Not Match Type: " + str(_minVal))
+            cv.waitKey(100)
             continue
 
         # _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(resultVal)
@@ -68,22 +103,22 @@ while True:
         #     print("Not Match Val " + str(_maxVal))
         #     cv.waitKey(1000)
         #     continue
-        
+
         print("Match " + str(_maxVal))
 
         if (method == cv.TM_SQDIFF or method == cv.TM_SQDIFF_NORMED):
             matchLoc = minLoc
         else:
             matchLoc = maxLoc
-        
+
         copy = cardimg.copy()
 
         cv.rectangle(copy, matchLoc, (matchLoc[0] + template.shape[0],
-                    matchLoc[1] + copy.shape[1]), 255, 2)
+                                      matchLoc[1] + copy.shape[1]), 255, 2)
 
-        cv.imshow("Template", template)            
+        cv.imshow("Template", template)
         cv.imshow("Original", frame)
         cv.imshow("Matching", resultType)
         cv.imshow("Match", copy)
 
-    cv.waitKey(1000)
+    cv.waitKey(50)
