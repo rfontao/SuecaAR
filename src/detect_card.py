@@ -31,9 +31,27 @@ while True:
             [0, 0],
             [500, 0],
             [500, 726],
-            [0, 726]], dtype="float32")
+            [0, 726]
+            ], dtype="float32")
 
-        M = cv.getPerspectiveTransform(detector.sortCardPoints(cards[0]), dst)
+        sortedPoints, center = detector.sortCardPoints(cards[0])
+        print(sortedPoints)
+        print("center", center)
+        x, y = cards[0][0][0]
+        x1, y1 = sortedPoints[0][0]
+        x2, y2 = sortedPoints[1][0]
+        x3, y3 = sortedPoints[2][0]
+        x4, y4 = sortedPoints[3][0]
+
+        cv.circle(frame, [int(x), int(y)], 2, (0,0,0), 5)
+        cv.circle(frame, [int(x1), int(y1)], 2, (255,0,0), 2)
+        cv.circle(frame, [int(x2), int(y2)], 2, (0,255,0), 2)
+        cv.circle(frame, [int(x3), int(y3)], 2, (0,0,255), 2)
+        cv.circle(frame, [int(x4), int(y4)], 2, (255,255,255), 2)
+        cv.circle(frame, [int(center[0]), int(center[1])], 2, (255,0,255), 2)
+
+
+        M = cv.getPerspectiveTransform(sortedPoints, dst)
         warp = cv.warpPerspective(frame, M, (500, 726))
 
         cv.imshow("Warp", warp)
@@ -57,6 +75,11 @@ while True:
         # resultVal = cv.matchTemplate(templateVal, cardimg, method)
 
         # cv.normalize(result, result, 0, 1, cv.NORM_MINMAX, -1)
+        # cv.imshow("Template", template)            
+        cv.imshow("Original", frame)
+        # cv.imshow("Matching", resultType)
+        # cv.imshow("Match", copy)
+
         _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(resultType)
         if(_maxVal < 0.9):
             print("Not Match Type: " + str(_maxVal))
@@ -81,9 +104,5 @@ while True:
         cv.rectangle(copy, matchLoc, (matchLoc[0] + template.shape[0],
                     matchLoc[1] + copy.shape[1]), 255, 2)
 
-        cv.imshow("Template", template)            
-        cv.imshow("Original", frame)
-        cv.imshow("Matching", resultType)
-        cv.imshow("Match", copy)
-
+        
     cv.waitKey(1000)
