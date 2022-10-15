@@ -32,7 +32,7 @@ class CardIdentifier():
         for k, v in self.suit_paths.items():
             img = cv.imread(f"../cards/full/{v}", cv.IMREAD_GRAYSCALE)
             img = img[90:180, 10:90]  # Extracting the rank of the card
-            _, img = cv.threshold(img, 225, 255, cv.THRESH_BINARY)
+            _, img = cv.threshold(img, 150, 255, cv.THRESH_BINARY)
             self.suit_database.append((k, img))
 
     def load_rank_database(self):
@@ -40,14 +40,14 @@ class CardIdentifier():
         for k, v in self.rank_paths.items():
             img = cv.imread(f"../cards/full/{v}", cv.IMREAD_GRAYSCALE)
             img = img[15:85, 25:75]  # Extracting the suit of the card
-            _, img = cv.threshold(img, 225, 255, cv.THRESH_BINARY)
+            _, img = cv.threshold(img, 150, 255, cv.THRESH_BINARY)
             self.rank_database.append((k, img))
 
     @classmethod
     def process_image_to_match(cls, image):
         image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
         image = cv.GaussianBlur(image, (5, 5), 0)
-        _, image = cv.threshold(image, 225, 255, cv.THRESH_BINARY)
+        _, image = cv.threshold(image, 150, 255, cv.THRESH_BINARY)
 
         # Test later with erosions (from: https://repositorio-aberto.up.pt/bitstream/10216/59981/1/000146528.pdf)
         # kernel = np.ones((3, 3), np.uint8)
