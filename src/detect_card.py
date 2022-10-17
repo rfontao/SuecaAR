@@ -27,40 +27,63 @@ while True:
             [0, 726]
         ], dtype="float32")
 
-        sortedPoints, center = detector.sortCardPoints(cards[0])
-        # print(sortedPoints)
-        # print("center", center)
-        x, y = cards[0][0][0]
-        x1, y1 = sortedPoints[0][0]
-        x2, y2 = sortedPoints[1][0]
-        x3, y3 = sortedPoints[2][0]
-        x4, y4 = sortedPoints[3][0]
+        for card in cards:
 
-        # cv.circle(frame, [int(x), int(y)], 2, (0, 0, 0), 5)
-        # cv.circle(frame, [int(x1), int(y1)], 2, (255, 0, 0), 2)
-        # cv.circle(frame, [int(x2), int(y2)], 2, (0, 255, 0), 2)
-        # cv.circle(frame, [int(x3), int(y3)], 2, (0, 0, 255), 2)
-        # cv.circle(frame, [int(x4), int(y4)], 2, (255, 255, 255), 2)
-        # cv.circle(frame, [int(center[0]), int(center[1])], 2, (255, 0, 255), 2)
+            sortedPoints, center = detector.sortCardPoints(card)
+            # print(sortedPoints)
+            # print("center", center)
+            x, y = card[0][0]
+            x1, y1 = sortedPoints[0][0]
+            x2, y2 = sortedPoints[1][0]
+            x3, y3 = sortedPoints[2][0]
+            x4, y4 = sortedPoints[3][0]
 
-        M = cv.getPerspectiveTransform(sortedPoints, dst)
-        warp = cv.warpPerspective(frame, M, (500, 726))
+            # cv.circle(frame, [int(x), int(y)], 2, (0, 0, 0), 5)
+            # cv.circle(frame, [int(x1), int(y1)], 2, (255, 0, 0), 2)
+            # cv.circle(frame, [int(x2), int(y2)], 2, (0, 255, 0), 2)
+            # cv.circle(frame, [int(x3), int(y3)], 2, (0, 0, 255), 2)
+            # cv.circle(frame, [int(x4), int(y4)], 2, (255, 255, 255), 2)
+            # cv.circle(frame, [int(center[0]), int(center[1])], 2, (255, 0, 255), 2)
 
-        cv.imshow("Warp", warp)
+            M = cv.getPerspectiveTransform(sortedPoints, dst)
+            warp = cv.warpPerspective(frame, M, (500, 726))
 
-        # cv.imshow("Warped", warp)
-        template = warp[0:int(warp.shape[0]/4), 0:int(warp.shape[1]/6)]
-        template = cv.GaussianBlur(template, (5, 5), 0)
-        templateVal = warp[0:90, 0:90]
-        templateType = warp[80:200, 0:90]
+            cv.imshow("Warp", warp)
 
-        cv.imshow("suit", templateType)
-        cv.imshow("rank", templateVal)
+            # cv.imshow("Warped", warp)
+            template = warp[0:int(warp.shape[0]/4), 0:int(warp.shape[1]/6)]
+            template = cv.GaussianBlur(template, (5, 5), 0)
+            templateVal = warp[0:90, 0:90]
+            templateType = warp[80:200, 0:90]
 
-        print(identifier.identify_rank(templateVal))
-        print(identifier.identify_suit(templateType))
+            cv.imshow("suit", templateType)
+            cv.imshow("rank", templateVal)
+
+            ranks = identifier.identify_rank(templateVal)
+            suits = identifier.identify_suit(templateType)
+            print(ranks)
+            print(suits)
+            suit_text = f"Suit: {suits[0][0]} - {round(suits[0][1], 2)}" if suits[0][1] < 0.5 else "Can't determine suit"
+            rank_text = f"Rank: {ranks[0][0]} - {round(ranks[0][1], 2)}" if ranks[0][1] < 0.5 else "Can't determine rank"
+
+            cv.putText(
+                frame,
+                suit_text,
+                (int(x1), int(y1)),
+                cv.FONT_HERSHEY_COMPLEX,
+                1.0,
+                (255, 255, 255)
+            )
+            cv.putText(
+                frame,
+                rank_text,
+                (int(x1), int(y1) - 30),
+                cv.FONT_HERSHEY_COMPLEX,
+                1.0,
+                (255, 255, 255)
+            )
 
         cv.imshow("Original", frame)
         cv.imshow("Template", template)
 
-    cv.waitKey(500)
+    cv.waitKey(50)

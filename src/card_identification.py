@@ -32,7 +32,7 @@ class CardIdentifier():
         for k, v in self.suit_paths.items():
             img = cv.imread(f"../cards/full/{v}", cv.IMREAD_GRAYSCALE)
             img = img[90:180, 10:90]  # Extracting the rank of the card
-            _, img = cv.threshold(img, 150, 255, cv.THRESH_BINARY)
+            _, img = cv.threshold(img, 180, 255, cv.THRESH_BINARY)
             self.suit_database.append((k, img))
 
     def load_rank_database(self):
@@ -40,14 +40,16 @@ class CardIdentifier():
         for k, v in self.rank_paths.items():
             img = cv.imread(f"../cards/full/{v}", cv.IMREAD_GRAYSCALE)
             img = img[15:85, 25:75]  # Extracting the suit of the card
-            _, img = cv.threshold(img, 150, 255, cv.THRESH_BINARY)
+            _, img = cv.threshold(img, 180, 255, cv.THRESH_BINARY)
             self.rank_database.append((k, img))
 
     @classmethod
     def process_image_to_match(cls, image):
         image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
         image = cv.GaussianBlur(image, (5, 5), 0)
-        _, image = cv.threshold(image, 150, 255, cv.THRESH_BINARY)
+        _, image = cv.threshold(image, 180, 255, cv.THRESH_BINARY)
+        # image = cv.adaptiveThreshold(image, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+        #                              cv.THRESH_BINARY, 5, 2)
 
         # Test later with erosions (from: https://repositorio-aberto.up.pt/bitstream/10216/59981/1/000146528.pdf)
         # kernel = np.ones((3, 3), np.uint8)
@@ -66,6 +68,8 @@ class CardIdentifier():
 
         image = cv.resize(
             image, (template.shape[1], template.shape[0]), interpolation=cv.INTER_LINEAR)
+        
+        cv.imshow("Template", image)
 
         result = cv.matchTemplate(image, template, cv.TM_SQDIFF_NORMED)
         _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(result)
@@ -74,6 +78,7 @@ class CardIdentifier():
     def identify_rank(self, rank_image):
         scores = []
         rank_image = CardIdentifier.process_image_to_match(rank_image)
+        cv.imshow("RANK_IMAGE", rank_image)
         for rank, template in self.rank_database:
             # cv.imshow("RANK", template)
             scores.append((rank, CardIdentifier.match_template(
@@ -85,6 +90,7 @@ class CardIdentifier():
     def identify_suit(self, suit_image):
         scores = []
         suit_image = CardIdentifier.process_image_to_match(suit_image)
+        cv.imshow("SUIT_IMAGE", suit_image)
         for suit, template in self.suit_database:
             scores.append((suit, CardIdentifier.match_template(
                 suit_image, template.copy())))
