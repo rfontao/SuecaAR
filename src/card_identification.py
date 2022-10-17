@@ -1,4 +1,5 @@
 import cv2 as cv
+import numpy as np
 
 
 class CardIdentifier():
@@ -59,6 +60,7 @@ class CardIdentifier():
     @classmethod
     def match_template(cls, image, template):
         """Image should be previously processed with process_image_to_match"""
+
         contours, _ = cv.findContours(
             image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         contours = sorted(contours, key=cv.contourArea, reverse=True)
@@ -68,7 +70,7 @@ class CardIdentifier():
 
         image = cv.resize(
             image, (template.shape[1], template.shape[0]), interpolation=cv.INTER_LINEAR)
-        
+
         cv.imshow("Template", image)
 
         result = cv.matchTemplate(image, template, cv.TM_SQDIFF_NORMED)
@@ -81,19 +83,60 @@ class CardIdentifier():
         cv.imshow("RANK_IMAGE", rank_image)
         for rank, template in self.rank_database:
             # cv.imshow("RANK", template)
-            scores.append((rank, CardIdentifier.match_template(
-                rank_image, template.copy())))
+            scores.append([rank, CardIdentifier.match_template(
+                rank_image, template.copy())])
 
         scores = sorted(scores, key=lambda x: x[1])
         return scores
 
     def identify_suit(self, suit_image):
         scores = []
+
+        # Must be before processing
+        is_red = CardIdentifier.is_suit_red(suit_image)
+
         suit_image = CardIdentifier.process_image_to_match(suit_image)
         cv.imshow("SUIT_IMAGE", suit_image)
         for suit, template in self.suit_database:
-            scores.append((suit, CardIdentifier.match_template(
-                suit_image, template.copy())))
+            scores.append([suit, CardIdentifier.match_template(
+                suit_image, template.copy())])
+
+        for score in scores:
+            # Lower score is better
+            if (score[0] == "Spades" or score[0] == "Clubs") and is_red:
+                score[1] = 2.0
+            if (score[0] == "Hearts" or score[0] == "Diamonds") and not is_red:
+                score[1] = 2.0
 
         scores = sorted(scores, key=lambda x: x[1])
         return scores
+
+    @classmethod
+    def is_suit_red(cls, image):
+        """Returns if the suit in image is red (Hearts or Diamonds)"""
+        img = image.copy()
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+
+        # Taken from https://stackoverflow.com/questions/30331944/finding-red-color-in-image-using-python-opencv
+        # lower mask (0-10)
+        lower_red = np.array([0, 50, 50])
+        upper_red = np.array([10, 255, 255])
+        mask0 = cv.inRange(hsv, lower_red, upper_red)
+
+        # upper mask (170-180)
+        lower_red = np.array([170, 50, 50])
+        upper_red = np.array([180, 255, 255])
+        mask1 = cv.inRange(hsv, lower_red, upper_red)
+
+        # join my masks
+        mask = mask0 + mask1
+
+        # set my output img to zero everywhere except my mask
+        img = cv.bitwise_and(img, img, mask=mask)
+
+        sparsity = 1.0 - (np.count_nonzero(img) / float(img.size))
+        if sparsity < 0.90:
+            return True
+        return False
+
+        # cv.imshow("IS_RED?", out)
