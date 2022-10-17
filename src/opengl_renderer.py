@@ -34,7 +34,14 @@ class OpenGLRenderer():
         glEnable(GL_TEXTURE_2D)
 
         # Set ambient lighting
+        glEnable(GL_LIGHTING)
+        glLight(GL_LIGHT0, GL_POSITION,  (2, 2, 2, 1))
+        glLightfv(GL_LIGHT0, GL_AMBIENT, (0, 0, 0, 1))
         glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.5, 0.5, 0.5, 1))
+        glLightfv(GL_LIGHT0, GL_SPECULAR, (0.5, 0.5, 0.5, 1))
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
+
+        # glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE | GL)
 
         # OpenCV intrinsic
         self.projection = OpenGLRenderer.intrinsic2Projection(
@@ -49,6 +56,11 @@ class OpenGLRenderer():
     def draw_model(self, model, rvec, tvec):
         model_view = OpenGLRenderer.extrinsic2ModelView(rvec, tvec)
 
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glEnable(GL_COLOR_MATERIAL)
+        glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE | GL_SPECULAR)
+
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         glMultMatrixf(self.projection)
@@ -60,6 +72,12 @@ class OpenGLRenderer():
         glScaled(*model.scale)
         glTranslatef(*model.translation)
         model.render()
+
+        glDisable(GL_LIGHT0)
+        glDisable(GL_LIGHTING)
+        glDisable(GL_COLOR_MATERIAL)
+
+        # glDepthFunc(GL_LESS)
 
     def draw_scene(self):
         # Draw Webcam image
@@ -73,16 +91,16 @@ class OpenGLRenderer():
 
         glutSwapBuffers()
 
+    # See https://gist.github.com/Ashwinning/baeb0835624fedc2e5b809d42417b70e
+
     def draw_background(self):
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glEnable(GL_TEXTURE_2D)
 
-        # Setting background image project_matrix and model_matrix.
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluPerspective(33.7, 1.3, 0.1, 100.0)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        # Create background texture
+        texid = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, texid)
 
         img = self.image.copy()
         # Convert image to OpenGL texture format
@@ -92,27 +110,33 @@ class OpenGLRenderer():
         height = img.size[1]
         img = img.tobytes("raw", "BGRX", 0, -1)
 
-        # Create background texture
-        texid = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, texid)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        gluOrtho2D(0, width, height, 0)
+
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
         glTexImage2D(GL_TEXTURE_2D, 0, 3, width, height, 0,
                      GL_RGBA, GL_UNSIGNED_BYTE, img)
 
-        glTranslatef(0.0, 0.0, -10.0)
         glBegin(GL_QUADS)
-        glTexCoord2f(0.0, 1.0)
-        glVertex3f(-4.0, -3.0, 0.0)
-        glTexCoord2f(1.0, 1.0)
-        glVertex3f(4.0, -3.0, 0.0)
-        glTexCoord2f(1.0, 0.0)
-        glVertex3f(4.0,  3.0, 0.0)
         glTexCoord2f(0.0, 0.0)
-        glVertex3f(-4.0,  3.0, 0.0)
+        glVertex2f(0.0, 0.0)
+        glTexCoord2f(1.0, 0.0)
+        glVertex2f(width, 0.0)
+        glTexCoord2f(1.0, 1.0)
+        glVertex2f(width, height)
+        glTexCoord2f(0.0, 1.0)
+        glVertex2f(0.0, height)
         glEnd()
 
         glBindTexture(GL_TEXTURE_2D, 0)
+        glClear(GL_DEPTH_BUFFER_BIT)
 
     @classmethod
     def extrinsic2ModelView(cls, RVEC, TVEC, R_vector=True):

@@ -19,8 +19,8 @@ if USE_OPENGL:
     renderer = OpenGLRenderer(
         camera_matrix, int(camera.get_width()), int(camera.get_height()))
     # Models must be loaded after renderer is instantiated
-    renderer.models.append(Model("../models/capsule.obj", 0, swapyz=True,
-                                scale=[0.03, 0.03, 0.03]))
+    renderer.models.append(Model("../models/Cup1.obj", 0, swapyz=True,
+                                scale=[0.05, 0.05, 0.05]))
     renderer.models.append(Model("../models/Plastic_Cup.obj", 1,
                                 swapyz=True, scale=[0.03, 0.03, 0.03]))
 
