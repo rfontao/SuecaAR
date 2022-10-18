@@ -159,8 +159,6 @@ class CardIdentifier():
         img = cv.bitwise_and(img, img, mask=mask)
 
         sparsity = 1.0 - (np.count_nonzero(img) / float(img.size))
-        if sparsity < 0.90:
-            return True
-        return False
+        return sparsity < 0.9
 
         # cv.imshow("IS_RED?", out)
