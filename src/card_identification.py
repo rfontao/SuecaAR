@@ -162,3 +162,50 @@ class CardIdentifier():
         return sparsity < 0.9
 
         # cv.imshow("IS_RED?", out)
+
+    def identify(self, image):
+        template = image[0:int(image.shape[0] / 4), 0:int(image.shape[1] / 6)]
+        template = cv.GaussianBlur(template, (5, 5), 0)
+        template = image[0:200, 0:90]
+        template = cv.copyMakeBorder(
+            template, 10, 10, 10, 10, cv.BORDER_CONSTANT, None, value=(255, 255, 255))
+
+        is_red = CardIdentifier.is_suit_red(template)
+
+        rank_img, suit_img = self.extract_info(template)
+
+        if rank_img is None and suit_img is None:
+            return False, [], []
+
+        cv.imshow("suit", suit_img)
+        cv.imshow("rank", rank_img)
+
+        ranks = self.identify_rank(rank_img)
+        suits = self.identify_suit(suit_img, is_red)
+
+        return True, ranks, suits
+
+    def show_predictions(self, image, point, ranks, suits):
+        print(ranks)
+        print(suits)
+        suit_text = f"Suit: {suits[0][0]} - {round(suits[0][1], 2)}" if suits[0][1] < 0.5 else "Can't determine suit"
+        rank_text = f"Rank: {ranks[0][0]} - {round(ranks[0][1], 2)}" if ranks[0][1] < 0.5 else "Can't determine rank"
+
+        cv.putText(
+            image,
+            suit_text,
+            point,
+            cv.FONT_HERSHEY_COMPLEX,
+            1.0,
+            (255, 255, 255)
+        )
+        cv.putText(
+            image,
+            rank_text,
+            (point[0], point[1] - 30),
+            cv.FONT_HERSHEY_COMPLEX,
+            1.0,
+            (255, 255, 255)
+        )
+
+        return image

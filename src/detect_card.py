@@ -48,47 +48,11 @@ while True:
             M = cv.getPerspectiveTransform(sortedPoints, dst)
             warp = cv.warpPerspective(frame, M, (500, 726))
 
-            cv.imshow("Warp", warp)
+            cv.imshow("Warped", warp)
 
-            # cv.imshow("Warped", warp)
-            template = warp[0:int(warp.shape[0]/4), 0:int(warp.shape[1]/6)]
-            template = cv.GaussianBlur(template, (5, 5), 0)
-            template = warp[0:200, 0:90]
-            template = cv.copyMakeBorder(template, 10, 10, 10, 10, cv.BORDER_CONSTANT, None, value = (255,255,255))
-
-            is_red = CardIdentifier.is_suit_red(template)
-
-            templateVal, templateType = identifier.extract_info(template)
-
-            if templateVal is None and templateType is None: 
-                continue
-
-            cv.imshow("suit", templateType)
-            cv.imshow("rank", templateVal)
-
-            ranks = identifier.identify_rank(templateVal)
-            suits = identifier.identify_suit(templateType, is_red)
-            print(ranks)
-            print(suits)
-            suit_text = f"Suit: {suits[0][0]} - {round(suits[0][1], 2)}" if suits[0][1] < 0.5 else "Can't determine suit"
-            rank_text = f"Rank: {ranks[0][0]} - {round(ranks[0][1], 2)}" if ranks[0][1] < 0.5 else "Can't determine rank"
-
-            cv.putText(
-                frame,
-                suit_text,
-                (int(x1), int(y1)),
-                cv.FONT_HERSHEY_COMPLEX,
-                1.0,
-                (255, 255, 255)
-            )
-            cv.putText(
-                frame,
-                rank_text,
-                (int(x1), int(y1) - 30),
-                cv.FONT_HERSHEY_COMPLEX,
-                1.0,
-                (255, 255, 255)
-            )
+            ret, ranks, suits = identifier.identify(warp)
+            if ret:
+                frame = identifier.show_predictions(frame, (int(x1), int(y1)), ranks, suits)
 
         cv.imshow("Original", frame)
         # cv.imshow("Template", template)
