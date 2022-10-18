@@ -60,13 +60,12 @@ class CardIdentifier():
     @classmethod
     def match_template(cls, image, template):
         """Image should be previously processed with process_image_to_match"""
-
-        contours, _ = cv.findContours(
-            image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        contours = sorted(contours, key=cv.contourArea, reverse=True)
-        if len(contours) > 1:
-            x, y, w, h = cv.boundingRect(contours[1])
-            image = image[y:y+h, x:x+w]
+        # contours, _ = cv.findContours(
+        #     image, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
+        # contours = sorted(contours, key=cv.contourArea, reverse=True)
+        # if len(contours) > 1:
+        #     x, y, w, h = cv.boundingRect(contours[1])
+        #     image = image[y:y+h, x:x+w]
 
         image = cv.resize(
             image, (template.shape[1], template.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -77,25 +76,50 @@ class CardIdentifier():
         _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(result)
         return _minVal
 
+    def extract_info(self, image):
+        image = CardIdentifier.process_image_to_match(image)
+        contours, _ = cv.findContours(
+            image, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
+        contours = sorted(contours, key=cv.contourArea, reverse=True)
+
+        if len(contours) < 3:
+            return None, None
+
+        cpy = image.copy()
+
+        x1, y1, w1, h1 = cv.boundingRect(contours[1])
+        x2, y2, w2, h2 = cv.boundingRect(contours[2])
+
+        if(w2 < 35):
+            if len(contours) < 4:
+                return None, None
+            x2, y2, w2, h2 = cv.boundingRect(contours[3])
+
+        # rank is always on top of suite
+        if(y1 < y2):
+            return image[y1:y1+h1, x1:x1+w1], image[y2:y2+h2, x2:x2+w2]
+        else:
+            return image[y2:y2+h2, x2:x2+w2], image[y1:y1+h1, x1:x1+w1]
+
     def identify_rank(self, rank_image):
         scores = []
-        rank_image = CardIdentifier.process_image_to_match(rank_image)
+
+        # rank_image = CardIdentifier.process_image_to_match(rank_image)
         cv.imshow("RANK_IMAGE", rank_image)
         for rank, template in self.rank_database:
-            # cv.imshow("RANK", template)
             scores.append([rank, CardIdentifier.match_template(
                 rank_image, template.copy())])
 
         scores = sorted(scores, key=lambda x: x[1])
         return scores
 
-    def identify_suit(self, suit_image):
+    def identify_suit(self, suit_image, is_red):
         scores = []
 
         # Must be before processing
-        is_red = CardIdentifier.is_suit_red(suit_image)
+        # is_red = CardIdentifier.is_suit_red(suit_image)
 
-        suit_image = CardIdentifier.process_image_to_match(suit_image)
+        # suit_image = CardIdentifier.process_image_to_match(suit_image)
         cv.imshow("SUIT_IMAGE", suit_image)
         for suit, template in self.suit_database:
             scores.append([suit, CardIdentifier.match_template(

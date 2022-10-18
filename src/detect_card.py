@@ -53,14 +53,21 @@ while True:
             # cv.imshow("Warped", warp)
             template = warp[0:int(warp.shape[0]/4), 0:int(warp.shape[1]/6)]
             template = cv.GaussianBlur(template, (5, 5), 0)
-            templateVal = warp[0:90, 0:90]
-            templateType = warp[80:200, 0:90]
+            template = warp[0:200, 0:90]
+            template = cv.copyMakeBorder(template, 10, 10, 10, 10, cv.BORDER_CONSTANT, None, value = (255,255,255))
+
+            is_red = CardIdentifier.is_suit_red(template)
+
+            templateVal, templateType = identifier.extract_info(template)
+
+            if templateVal is None and templateType is None: 
+                continue
 
             cv.imshow("suit", templateType)
             cv.imshow("rank", templateVal)
 
             ranks = identifier.identify_rank(templateVal)
-            suits = identifier.identify_suit(templateType)
+            suits = identifier.identify_suit(templateType, is_red)
             print(ranks)
             print(suits)
             suit_text = f"Suit: {suits[0][0]} - {round(suits[0][1], 2)}" if suits[0][1] < 0.5 else "Can't determine suit"
@@ -84,6 +91,6 @@ while True:
             )
 
         cv.imshow("Original", frame)
-        cv.imshow("Template", template)
+        # cv.imshow("Template", template)
 
     cv.waitKey(50)
