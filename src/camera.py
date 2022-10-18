@@ -23,6 +23,8 @@ class Camera():
             print("Can't receive frame (stream ended?). Exiting ...")
             exit()
 
+        frame = cv.undistort(frame, self.matrix, self.dist_coeffs)
+
         return frame
 
     def get_width(self):
