@@ -31,41 +31,37 @@ class CardIdentifier():
     def load_suit_database(self):
         self.suit_database = []
         for k, v in self.suit_paths.items():
-            img = cv.imread(f"../cards/full/{v}", cv.IMREAD_GRAYSCALE)
-            img = img[90:180, 10:90]  # Extracting the rank of the card
-            _, img = cv.threshold(img, 180, 255, cv.THRESH_BINARY)
-            self.suit_database.append((k, img))
+            img = cv.imread(f"../cards/full/{v}", cv.IMREAD_COLOR)
+            img = img[0:200, 0:90]
+            img = cv.copyMakeBorder(
+                img, 10, 10, 10, 10, cv.BORDER_CONSTANT, None, value=(255, 255, 255))
+
+            _, suit = self.extract_info(img)
+            self.suit_database.append((k, suit))
 
     def load_rank_database(self):
         self.rank_database = []
         for k, v in self.rank_paths.items():
-            img = cv.imread(f"../cards/full/{v}", cv.IMREAD_GRAYSCALE)
-            img = img[15:85, 25:75]  # Extracting the suit of the card
-            _, img = cv.threshold(img, 180, 255, cv.THRESH_BINARY)
-            self.rank_database.append((k, img))
+            img = cv.imread(f"../cards/full/{v}", cv.IMREAD_COLOR)
+            img = img[0:200, 0:90]
+            img = cv.copyMakeBorder(
+                img, 10, 10, 10, 10, cv.BORDER_CONSTANT, None, value=(255, 255, 255))
+
+            rank, _ = self.extract_info(img)
+            self.rank_database.append((k, rank))
+
+        cv.imshow("RANK_J", self.rank_database[8][1])
 
     @classmethod
     def process_image_to_match(cls, image):
         image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
         image = cv.GaussianBlur(image, (5, 5), 0)
-        _, image = cv.threshold(image, 180, 255, cv.THRESH_BINARY)
-        # image = cv.adaptiveThreshold(image, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C,
-        #                              cv.THRESH_BINARY, 5, 2)
-
-        # Test later with erosions (from: https://repositorio-aberto.up.pt/bitstream/10216/59981/1/000146528.pdf)
-        # kernel = np.ones((3, 3), np.uint8)
-        # templateVal = cv.erode(templateVal, kernel, iterations=1)
+        _, image = cv.threshold(image, 150, 255, cv.THRESH_BINARY)
         return image
 
     @classmethod
     def match_template(cls, image, template):
         """Image should be previously processed with process_image_to_match"""
-        # contours, _ = cv.findContours(
-        #     image, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
-        # contours = sorted(contours, key=cv.contourArea, reverse=True)
-        # if len(contours) > 1:
-        #     x, y, w, h = cv.boundingRect(contours[1])
-        #     image = image[y:y+h, x:x+w]
 
         image = cv.resize(
             image, (template.shape[1], template.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -80,20 +76,20 @@ class CardIdentifier():
         image = CardIdentifier.process_image_to_match(image)
         contours, _ = cv.findContours(
             image, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
-        contours = sorted(contours, key=cv.contourArea, reverse=True)
 
         if len(contours) < 3:
             return None, None
 
-        cpy = image.copy()
+        def sort_key(x):
+            x, _, _, h = cv.boundingRect(x)
+            if h > 130:
+                return 999
+            return x
+        contours_sorted_x = sorted(contours, key=sort_key)
 
-        x1, y1, w1, h1 = cv.boundingRect(contours[1])
-        x2, y2, w2, h2 = cv.boundingRect(contours[2])
 
-        if(w2 < 35):
-            if len(contours) < 4:
-                return None, None
-            x2, y2, w2, h2 = cv.boundingRect(contours[3])
+        x1, y1, w1, h1 = cv.boundingRect(contours_sorted_x[0])
+        x2, y2, w2, h2 = cv.boundingRect(contours_sorted_x[1])
 
         # rank is always on top of suite
         if(y1 < y2):
@@ -165,7 +161,7 @@ class CardIdentifier():
 
     def identify(self, image):
         template = image[0:int(image.shape[0] / 4), 0:int(image.shape[1] / 6)]
-        template = cv.GaussianBlur(template, (5, 5), 0)
+        # template = cv.GaussianBlur(template, (5, 5), 0)
         template = image[0:200, 0:90]
         template = cv.copyMakeBorder(
             template, 10, 10, 10, 10, cv.BORDER_CONSTANT, None, value=(255, 255, 255))
@@ -197,7 +193,7 @@ class CardIdentifier():
             point,
             cv.FONT_HERSHEY_COMPLEX,
             1.0,
-            (255, 255, 255)
+            (0, 0, 255)
         )
         cv.putText(
             image,
@@ -205,7 +201,7 @@ class CardIdentifier():
             (point[0], point[1] - 30),
             cv.FONT_HERSHEY_COMPLEX,
             1.0,
-            (255, 255, 255)
+            (0, 0, 255)
         )
 
         return image
