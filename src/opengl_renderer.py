@@ -138,6 +138,10 @@ class OpenGLRenderer():
         glBindTexture(GL_TEXTURE_2D, 0)
         glClear(GL_DEPTH_BUFFER_BIT)
 
+    def display(self):
+        glutPostRedisplay()
+        glutMainLoopEvent()
+
     @classmethod
     def extrinsic2ModelView(cls, RVEC, TVEC, R_vector=True):
         """Convert OpenCV extrinsic matrix to OpenGL Model View"""
