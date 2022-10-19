@@ -12,12 +12,12 @@ if USE_OPENGL:
     from OpenGL.GLUT import *
     from opengl_renderer import OpenGLRenderer
 
-files = np.load("../desktop_fontao.npz")
+files = np.load("../params_1.npz")
 camera_matrix = files["camera_matrix"]
 distortion_coefficient = files["distortion_coefficients"]
 
 
-camera = Camera(0, sys.argv[1])
+camera = Camera(1, sys.argv[1])
 if USE_OPENGL:
     renderer = OpenGLRenderer(
         camera_matrix, int(camera.get_width()), int(camera.get_height()))

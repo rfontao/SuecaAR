@@ -182,8 +182,8 @@ class CardIdentifier():
         return True, ranks, suits
 
     def show_predictions(self, image, point, ranks, suits):
-        print(ranks)
-        print(suits)
+        #print(ranks)
+        #print(suits)
         suit_text = f"Suit: {suits[0][0]} - {round(suits[0][1], 2)}" if suits[0][1] < 0.5 else "Can't determine suit"
         rank_text = f"Rank: {ranks[0][0]} - {round(ranks[0][1], 2)}" if ranks[0][1] < 0.5 else "Can't determine rank"
 
