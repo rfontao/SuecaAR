@@ -148,24 +148,30 @@ class Sueca:
                 text,
                 [5, cur_y],
                 cv.FONT_HERSHEY_COMPLEX,
-                1.0,
+                0.6,
                 (0, 255, 255)
             )
 
-            cur_y += 30
+            cur_y += 20
 
-    # def tryAddCards(self, list_suits, list_values):
-    #     for i in range(0, len(list_suits)):
-    #         already_in_list = False
-    #         for j in range(len(self.play_cards_suits)):
-    #             if list_suits[i] == self.play_cards_suits[j] and list_values[i] == self.play_cards_values[j]:
-    #                 already_in_list = True
-    #         if not already_in_list:
-    #             self.play_cards_suits.append(list_suits[i])
-    #             self.play_cards_values.append(list_values[i])
+    def draw_team_scores(self, frame):
 
-    #     if len(self.play_cards_suits) >= 4:
-    #         self.calcRound(self.play_cards_suits[0], self.play_cards_values[0], self.play_cards_suits[1], self.play_cards_values[1],
-    #                        self.play_cards_suits[2], self.play_cards_values[2], self.play_cards_suits[3], self.play_cards_values[3])
-    #         self.play_cards_suits.clear()
-    #         self.play_cards_values.clear()
+        cur_y = frame.shape[0] - 30
+
+        cv.putText(
+            frame,
+            f"Team 1 score: {self.team_1_points}",
+            [5, cur_y],
+            cv.FONT_HERSHEY_COMPLEX,
+            0.7,
+            (255, 255, 0)
+        )
+
+        cv.putText(
+            frame,
+            f"Team 2 score: {self.team_2_points}",
+            [5, cur_y + 15],
+            cv.FONT_HERSHEY_COMPLEX,
+            0.7,
+            (255, 255, 0)
+        )

@@ -84,6 +84,7 @@ while True:
         found_cards = [f"{r} {s}" for r, s in zip(final_suits, final_ranks)]
         sueca.register_cards(found_cards)
         sueca.draw_found_cards(frame)
+        sueca.draw_team_scores(frame)
 
         # for i in range(len(final_suits)):
             # Add suits and ranks to game, as long as they don't exceed 4 at once
