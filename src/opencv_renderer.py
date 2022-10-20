@@ -32,10 +32,10 @@ class OpenCVRenderer():
         self.picture = cv.imread("../cards/full/1.png")
 
         self.image = None
-        self.models = []
         self.aruco_ids = []
         self.rvecs = []
         self.tvecs = []
+        self.display_models = False
         cv.namedWindow(self.window_name)
 
     def display_wireframes(self):
@@ -67,8 +67,8 @@ class OpenCVRenderer():
                 self.image = self.image + warp
 
     def display(self):
-
-        self.display_wireframes()
-        self.display_image()
+        if self.display_models:
+            self.display_wireframes()
+            self.display_image()
 
         cv.imshow(self.window_name, self.image)

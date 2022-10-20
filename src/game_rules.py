@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+import cv2 as cv
+
+
 class Sueca:
     CARD_TYPE_TO_POINTS = {
         "A": 11,
@@ -43,78 +47,125 @@ class Sueca:
     play_cards_suits = []
     play_cards_values = []
 
-    game_state = 0
+    current_round_cards = {}
+    fixed_current_round_cards = []
+    current_round = 0
 
-    #TRUMP_SUITS = ["Spades", "Hearts", "Clubs", "Diamonds"] #Copas, Espadas, Ouros, Paus
+    # TRUMP_SUITS = ["Spades", "Hearts", "Clubs", "Diamonds"] #Copas, Espadas, Ouros, Paus
 
-
-    def __init__(self, number_rounds):
+    def __init__(self, number_rounds, trump_suit):
         self.vertical_team_points = 0
         self.horizontal_team_points = 0
         self.cards_played = 0
         self.total_number_rounds = int(number_rounds)
-        
+        self.game_state = 0
+        self.setTrumpSuit(trump_suit)
+        self.final_images = [cv.imread("../cards/player_1_win.png"), cv.imread(
+            "../cards/player_2_win.png"), cv.imread("../cards/tie.png")]
+
     def is_game_over(self):
         return self.total_number_rounds <= self.cards_played / 4
-    
+
     def setTrumpSuit(self, trump_suit):
         self.trump_suit = trump_suit
-        self.game_state = 1
-        print("set trump suit: " + trump_suit)
+        print(f"Set trump suit: {trump_suit}")
 
     def getWinner(self):
-        if(not self.is_game_over):
+        if not self.is_game_over:
             return -1
-        if(self.team_1_points > self.team_2_points):
+        if self.team_1_points > self.team_2_points:
             return 1
-        elif(self.team_2_points > self.team_1_points):
+        elif self.team_2_points > self.team_1_points:
             return 2
         return 0
-        #if(self.team_1_points > 60):
+        # if(self.team_1_points > 60):
         #    return 1
-        #if(self.team_2_points > 60):
+        # if(self.team_2_points > 60):
         #    return 2
 
-    def calcRound(self, card1Suit, card1Value, card2Suit, card2Value, card3Suit, card3Value, card4Suit, card4Value):
-        if(self.CARD_TYPE_TO_POINTS[card1Value] < 0 or self.CARD_TYPE_TO_POINTS[card2Value] < 0 or self.CARD_TYPE_TO_POINTS[card3Value] < 0 or self.CARD_TYPE_TO_POINTS[card4Value] < 0):
-            return False
-        
+    def register_cards(self, cards):
+
+        # self.current_round_cards = list(
+        #     filter(lambda x: x[0] in cards, self.current_round_cards))
+        cards = list(
+            filter(lambda x: x not in self.fixed_current_round_cards, cards))
+        self.current_round_cards = {key: value for (key, value) in self.current_round_cards.items() if key in cards}
+
+        for k in self.current_round_cards.keys():
+            if k in cards:
+                self.current_round_cards[k] += 1
+
+        # Add new cards found
+        for c in cards:
+            if c not in self.current_round_cards:
+                self.current_round_cards[c] = 0
+
+        # If a card has been seen n frames mark it as present
+        for k, v in self.current_round_cards.items():
+            if v >= 5:
+                self.fixed_current_round_cards.append(k)
+
+        if len(self.fixed_current_round_cards) == 4:
+            self.calcRound()
+
+    def calcRound(self):
+
+        cards = self.fixed_current_round_cards
+        print(cards)
+
         # Calculate winner
-        card1Prio = (999 if card1Suit == self.trump_suit else 0) + self.CARD_TYPE_PRIORITY[card1Value]
-        card2Prio = (999 if card2Suit == self.trump_suit else 0) + self.CARD_TYPE_PRIORITY[card2Value]
-        card3Prio = (999 if card3Suit == self.trump_suit else 0) + self.CARD_TYPE_PRIORITY[card3Value]
-        card4Prio = (999 if card4Suit == self.trump_suit else 0) + self.CARD_TYPE_PRIORITY[card4Value]
+        priorities = [(999 if c.split(" ")[0] == self.trump_suit else 0) +
+                      self.CARD_TYPE_PRIORITY[c.split(" ")[1]] for c in cards]
+        max_prio = max(priorities)
 
-        max_prio = max([card1Prio, card2Prio, card3Prio, card4Prio])
-
-        card1Points = self.CARD_TYPE_TO_POINTS[card1Value]
-        card2Points = self.CARD_TYPE_TO_POINTS[card2Value]
-        card3Points = self.CARD_TYPE_TO_POINTS[card3Value]
-        card4Points = self.CARD_TYPE_TO_POINTS[card4Value]
-
-        roundPoints = card1Points + card2Points + card3Points + card4Points
+        points = [self.CARD_TYPE_TO_POINTS[c.split(" ")[1]] for c in cards]
+        roundPoints = sum(points)
 
         # Add points to winner's team
-        if(card1Prio == max_prio or card3Prio == max_prio):
+        if priorities[0] == max_prio or priorities[2] == max_prio:
             self.team_1_points += roundPoints
-        if(card2Prio == max_prio or card4Prio == max_prio):
+        else:
             self.team_2_points += roundPoints
 
-        self.cards_played += 4
-        if(self.cards_played >= 4 * self.total_number_rounds):
+        if self.current_round == self.total_number_rounds:
             self.is_game_over = True
-            self.game_state = 2
-        
-    def tryAddCards(self, list_suits, list_values):
-        for i in range(0, len(list_suits)):
-            already_in_list = False
-            for j in range(0, len(self.play_cards_suits)):
-                if(list_suits[i] == self.play_cards_suits[j] and list_values[i] == self.play_cards_values[j]):
-                    already_in_list = True
-            if(not already_in_list):
-                (self.play_cards_suits).append(list_suits[i])
-                (self.play_cards_values).append(list_values[i])
-        if (len(self.play_cards_suits) >= 4):
-            self.calcRound(self.play_cards_suits[0], self.play_cards_values[0], self.play_cards_suits[1], self.play_cards_values[1], self.play_cards_suits[2], self.play_cards_values[2], self.play_cards_suits[3], self.play_cards_values[3])
-            self.play_cards_suits.clear()
-            self.play_cards_values.clear()
+            self.game_state = 1
+
+        self.current_round += 1
+        self.current_round_cards = {}
+        self.fixed_current_round_cards = []
+
+    def draw_found_cards(self, frame):
+
+        # print(f"Found:{self.current_round_cards}")
+        # print(f"Fixed Found:{self.fixed_current_round_cards}")
+        cur_y = 20
+        for c in self.fixed_current_round_cards:
+            text = f"Found card: {c}"
+
+            cv.putText(
+                frame,
+                text,
+                [5, cur_y],
+                cv.FONT_HERSHEY_COMPLEX,
+                1.0,
+                (0, 255, 255)
+            )
+
+            cur_y += 30
+
+    # def tryAddCards(self, list_suits, list_values):
+    #     for i in range(0, len(list_suits)):
+    #         already_in_list = False
+    #         for j in range(len(self.play_cards_suits)):
+    #             if list_suits[i] == self.play_cards_suits[j] and list_values[i] == self.play_cards_values[j]:
+    #                 already_in_list = True
+    #         if not already_in_list:
+    #             self.play_cards_suits.append(list_suits[i])
+    #             self.play_cards_values.append(list_values[i])
+
+    #     if len(self.play_cards_suits) >= 4:
+    #         self.calcRound(self.play_cards_suits[0], self.play_cards_values[0], self.play_cards_suits[1], self.play_cards_values[1],
+    #                        self.play_cards_suits[2], self.play_cards_values[2], self.play_cards_suits[3], self.play_cards_values[3])
+    #         self.play_cards_suits.clear()
+    #         self.play_cards_values.clear()

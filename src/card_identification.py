@@ -36,7 +36,7 @@ class CardIdentifier():
             img = cv.copyMakeBorder(
                 img, 10, 10, 10, 10, cv.BORDER_CONSTANT, None, value=(255, 255, 255))
 
-            _, suit = self.extract_info(img)
+            _, suit = self.extract_rank_suit_images(img)
             self.suit_database.append((k, suit))
 
     def load_rank_database(self):
@@ -47,16 +47,14 @@ class CardIdentifier():
             img = cv.copyMakeBorder(
                 img, 10, 10, 10, 10, cv.BORDER_CONSTANT, None, value=(255, 255, 255))
 
-            rank, _ = self.extract_info(img)
+            rank, _ = self.extract_rank_suit_images(img)
             self.rank_database.append((k, rank))
-
-        cv.imshow("RANK_J", self.rank_database[8][1])
 
     @classmethod
     def process_image_to_match(cls, image):
         image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
         image = cv.GaussianBlur(image, (5, 5), 0)
-        _, image = cv.threshold(image, 150, 255, cv.THRESH_BINARY)
+        _, image = cv.threshold(image, 215, 255, cv.THRESH_BINARY)
         return image
 
     @classmethod
@@ -66,14 +64,13 @@ class CardIdentifier():
         image = cv.resize(
             image, (template.shape[1], template.shape[0]), interpolation=cv.INTER_LINEAR)
 
-        cv.imshow("Template", image)
-
         result = cv.matchTemplate(image, template, cv.TM_SQDIFF_NORMED)
         _minVal, _maxVal, minLoc, maxLoc = cv.minMaxLoc(result)
         return _minVal
 
-    def extract_info(self, image):
+    def extract_rank_suit_images(self, image):
         image = CardIdentifier.process_image_to_match(image)
+        cv.imshow("Cut", image)
         contours, _ = cv.findContours(
             image, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
 
@@ -82,11 +79,10 @@ class CardIdentifier():
 
         def sort_key(x):
             x, _, _, h = cv.boundingRect(x)
-            if h > 130:
+            if h > 130 or h < 10:
                 return 999
             return x
         contours_sorted_x = sorted(contours, key=sort_key)
-
 
         x1, y1, w1, h1 = cv.boundingRect(contours_sorted_x[0])
         x2, y2, w2, h2 = cv.boundingRect(contours_sorted_x[1])
@@ -100,8 +96,6 @@ class CardIdentifier():
     def identify_rank(self, rank_image):
         scores = []
 
-        # rank_image = CardIdentifier.process_image_to_match(rank_image)
-        cv.imshow("RANK_IMAGE", rank_image)
         for rank, template in self.rank_database:
             scores.append([rank, CardIdentifier.match_template(
                 rank_image, template.copy())])
@@ -112,11 +106,6 @@ class CardIdentifier():
     def identify_suit(self, suit_image, is_red):
         scores = []
 
-        # Must be before processing
-        # is_red = CardIdentifier.is_suit_red(suit_image)
-
-        # suit_image = CardIdentifier.process_image_to_match(suit_image)
-        cv.imshow("SUIT_IMAGE", suit_image)
         for suit, template in self.suit_database:
             scores.append([suit, CardIdentifier.match_template(
                 suit_image, template.copy())])
@@ -165,10 +154,11 @@ class CardIdentifier():
         template = image[0:200, 0:90]
         template = cv.copyMakeBorder(
             template, 10, 10, 10, 10, cv.BORDER_CONSTANT, None, value=(255, 255, 255))
+        cv.imshow("Cut_bordered", template)
 
         is_red = CardIdentifier.is_suit_red(template)
 
-        rank_img, suit_img = self.extract_info(template)
+        rank_img, suit_img = self.extract_rank_suit_images(template)
 
         if rank_img is None and suit_img is None:
             return False, [], []
@@ -182,8 +172,8 @@ class CardIdentifier():
         return True, ranks, suits
 
     def show_predictions(self, image, point, ranks, suits):
-        #print(ranks)
-        #print(suits)
+        # print(ranks)
+        # print(suits)
         suit_text = f"Suit: {suits[0][0]} - {round(suits[0][1], 2)}" if suits[0][1] < 0.5 else "Can't determine suit"
         rank_text = f"Rank: {ranks[0][0]} - {round(ranks[0][1], 2)}" if ranks[0][1] < 0.5 else "Can't determine rank"
 

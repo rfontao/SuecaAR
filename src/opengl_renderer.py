@@ -52,6 +52,7 @@ class OpenGLRenderer():
         self.aruco_ids = []
         self.rvecs = []
         self.tvecs = []
+        self.draw_model = False
 
     def draw_model(self, model, rvec, tvec):
         model_view = OpenGLRenderer.extrinsic2ModelView(rvec, tvec)
@@ -84,10 +85,11 @@ class OpenGLRenderer():
         self.draw_background()
 
         # Draw objects
-        for i in range(len(self.aruco_ids)):
-            for model in self.models:
-                if self.aruco_ids[i] == model.aruco_id:
-                    self.draw_model(model, self.rvecs[i], self.tvecs[i])
+        if self.draw_models:
+            for i in range(len(self.aruco_ids)):
+                for model in self.models:
+                    if self.aruco_ids[i] == model.aruco_id:
+                        self.draw_model(model, self.rvecs[i], self.tvecs[i])
 
         glutSwapBuffers()
 

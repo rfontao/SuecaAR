@@ -32,3 +32,9 @@ class Camera():
 
     def get_height(self):
         return self.capture.get(cv.CAP_PROP_FRAME_HEIGHT)
+
+    def get_matrix(self):
+        return self.matrix
+
+    def get_distortion_coeffs(self):
+        return self.dist_coeffs

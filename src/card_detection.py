@@ -11,7 +11,7 @@ import numpy as np
 class CardDetector():
 
     def __init__(self, debug=False):
-        self.t1 = 200
+        self.t1 = 170
         self.t2 = 255
         self.area_threshold = 1000
 
@@ -51,7 +51,6 @@ class CardDetector():
             if not cv.isContourConvex(approx):
                 continue
 
-
             # Threshold area
             area = cv.contourArea(approx)
             if area < self.area_threshold:
@@ -81,13 +80,13 @@ class CardDetector():
 
     def changeThreshold2Callback(self, val):
         self.t2 = val
-    
+
     def changeAreaThresholdCallback(self, val):
         self.area_threshold = val
 
     def lineIntersection(self, pair1, pair2):
         pairs = np.vstack([pair1, pair2])
-        pairs = np.hstack([pairs, np.ones((4,1))])
+        pairs = np.hstack([pairs, np.ones((4, 1))])
         l1 = np.cross(pairs[0], pairs[1])
         l2 = np.cross(pairs[2], pairs[3])
         x, y, z = np.cross(l1, l2)
@@ -100,22 +99,24 @@ class CardDetector():
 
     def sortCardPoints(self, cardPoints):
         distDict = {}
-        distDict[np.linalg.norm(cardPoints[0][0] - cardPoints[1][0])] = cardPoints[1]
-        distDict[np.linalg.norm(cardPoints[0][0] - cardPoints[2][0])] = cardPoints[2]
-        distDict[np.linalg.norm(cardPoints[0][0] - cardPoints[3][0])] = cardPoints[3]
+        distDict[np.linalg.norm(
+            cardPoints[0][0] - cardPoints[1][0])] = cardPoints[1]
+        distDict[np.linalg.norm(
+            cardPoints[0][0] - cardPoints[2][0])] = cardPoints[2]
+        distDict[np.linalg.norm(
+            cardPoints[0][0] - cardPoints[3][0])] = cardPoints[3]
 
         sortedDists = sorted(distDict)
         pair1 = [cardPoints[0][0], distDict[sortedDists[2]][0]]
         pair2 = [distDict[sortedDists[0]][0], distDict[sortedDists[1]][0]]
 
         x, y = self.lineIntersection(pair1, pair2)
-        
-        center = [x,y]
+
+        center = [x, y]
         vec1 = cardPoints[0][0] - center
         vec2 = distDict[sortedDists[0]][0] - center
         angle1 = np.arctan2(-vec1[1], vec1[0])
         angle2 = np.arctan2(-vec2[1], vec2[0])
-
 
         if(self.inSecondAndThirdQuadrant(angle1, angle2)):
             angle2 = angle2 + 2*np.pi
@@ -125,10 +126,8 @@ class CardDetector():
         elif((angle1 > -np.pi/2 and angle1 < 0) or (angle2 > -np.pi/2 and angle2 < 0)):
             angle1 = angle1 + np.pi/2
             angle2 = angle2 + np.pi/2
-        
-
 
         if(angle1 > angle2):
             return (np.array([cardPoints[0], distDict[sortedDists[0]], distDict[sortedDists[2]], distDict[sortedDists[1]]]), center)
         else:
-            return (np.array([ distDict[sortedDists[0]], cardPoints[0], distDict[sortedDists[1]],  distDict[sortedDists[2]]]), center)
+            return (np.array([distDict[sortedDists[0]], cardPoints[0], distDict[sortedDists[1]],  distDict[sortedDists[2]]]), center)
