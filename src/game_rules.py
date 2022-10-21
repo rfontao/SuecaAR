@@ -137,6 +137,8 @@ class Sueca:
             self.team_2_points += roundPoints
             self.winning_cards = [cards[1], cards[3]]
 
+        self.current_round += 1
+
         if self.current_round == self.total_number_rounds:
             self.is_game_over = True
             self.game_state = GameState.GAME_ENDED
@@ -145,7 +147,7 @@ class Sueca:
             self.game_state = GameState.ROUND_ENDED
             print("ROUND_ENDED")
 
-        self.current_round += 1
+        
         self.current_round_cards = {}
         self.fixed_current_round_cards = []
 
