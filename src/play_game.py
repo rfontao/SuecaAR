@@ -102,7 +102,7 @@ while True:
         sueca.draw_team_scores(frame)
 
     if sueca.game_state == GameState.GAME_ENDED:
-        renderer.draw_model = True
+        renderer.display_models = True
         renderer.picture = sueca.final_images[sueca.getWinner()]
         rvecs = []
         tvecs = []
