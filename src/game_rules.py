@@ -55,6 +55,8 @@ class Sueca:
     winning_cards = []
     current_round = 0
 
+    player_who_won = 1 # 1, 2, 3, 4; first round -> 1
+
     # TRUMP_SUITS = ["Spades", "Hearts", "Clubs", "Diamonds"] #Copas, Espadas, Ouros, Paus
 
     def __init__(self, number_rounds, trump_suit):
@@ -129,14 +131,50 @@ class Sueca:
         points = [self.CARD_TYPE_TO_POINTS[c.split(" ")[1]] for c in cards]
         roundPoints = sum(points)
 
+        player_one = self.player_who_won - 1
+        player_two = (self.player_who_won + 1) % 4 - 1
+        player_three = (self.player_who_won + 2) % 4 - 1
+        player_four = (self.player_who_won + 3) % 4 - 1
+
+        if(self.player_who_won % 2 == 0):
+            player_one = (player_one + 2) % 4
+            player_two = (player_two + 2) % 4
+            player_three = (player_three + 2) % 4
+            player_four = (player_four + 2) % 4
+
+        if(player_one < 0):
+            player_one += 4
+        if(player_two < 0):
+            player_two += 4
+        if(player_three < 0):
+            player_three += 4
+        if(player_four < 0):
+            player_four += 4
+        
+        print("Players:")
+        print(player_one)
+        print(player_two)
+        print(player_three)
+        print(player_four)
+
         # Add points to winner's team
-        if priorities[0] == max_prio or priorities[2] == max_prio:
+        if priorities[player_one] == max_prio or priorities[player_three] == max_prio:
             self.team_1_points += roundPoints
-            self.winning_cards = [cards[0], cards[2]]
+            self.winning_cards = [cards[player_one], cards[player_three]]
+            if priorities[player_one] == max_prio:
+                self.player_who_won = 1
+            if priorities[player_three] == max_prio:
+                self.player_who_won = 3
         else:
             self.team_2_points += roundPoints
-            self.winning_cards = [cards[1], cards[3]]
-
+            self.winning_cards = [cards[player_two], cards[player_four]]
+            if priorities[player_two] == max_prio:
+                self.player_who_won = 2
+            if priorities[player_four] == max_prio:
+                self.player_who_won = 4
+        
+        print("Player who won:")
+        print(self.player_who_won)
         self.current_round += 1
 
         if self.current_round == self.total_number_rounds:
