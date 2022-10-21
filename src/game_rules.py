@@ -55,7 +55,7 @@ class Sueca:
     winning_cards = []
     current_round = 0
 
-    player_who_won = 1 # 1, 2, 3, 4; first round -> 1
+    player_who_won = 1  # 1, 2, 3, 4; first round -> 1
 
     # TRUMP_SUITS = ["Spades", "Hearts", "Clubs", "Diamonds"] #Copas, Espadas, Ouros, Paus
 
@@ -136,26 +136,20 @@ class Sueca:
         player_three = (self.player_who_won + 2) % 4 - 1
         player_four = (self.player_who_won + 3) % 4 - 1
 
-        if(self.player_who_won % 2 == 0):
+        if self.player_who_won % 2 == 0:
             player_one = (player_one + 2) % 4
             player_two = (player_two + 2) % 4
             player_three = (player_three + 2) % 4
             player_four = (player_four + 2) % 4
 
-        if(player_one < 0):
+        if player_one < 0:
             player_one += 4
-        if(player_two < 0):
+        if player_two < 0:
             player_two += 4
-        if(player_three < 0):
+        if player_three < 0:
             player_three += 4
-        if(player_four < 0):
+        if player_four < 0:
             player_four += 4
-        
-        print("Players:")
-        print(player_one)
-        print(player_two)
-        print(player_three)
-        print(player_four)
 
         # Add points to winner's team
         if priorities[player_one] == max_prio or priorities[player_three] == max_prio:
@@ -172,7 +166,7 @@ class Sueca:
                 self.player_who_won = 2
             if priorities[player_four] == max_prio:
                 self.player_who_won = 4
-        
+
         print("Player who won:")
         print(self.player_who_won)
         self.current_round += 1
@@ -185,7 +179,6 @@ class Sueca:
             self.game_state = GameState.ROUND_ENDED
             print("ROUND_ENDED")
 
-        
         self.current_round_cards = {}
         self.fixed_current_round_cards = []
 
@@ -230,29 +223,16 @@ class Sueca:
             (255, 255, 0)
         )
 
-    def draw_winner_cards(self, frame, found_cards, transforms):
+    def draw_winner_cards(self, frame, found_cards, coords):
         for i in range(len(found_cards)):
             if found_cards[i] in self.winning_cards:
-                image = np.zeros((500, 726, 3))
-
                 cv.putText(
-                    image,
-                    f"Hello",
-                    [40, 40],
+                    frame,
+                    f"Winner",
+                    coords[i],
                     cv.FONT_HERSHEY_COMPLEX,
                     1.0,
                     (255, 255, 0)
                 )
-                cv.imshow("TEXT_WARP image", image)
-
-
-                warp = cv.warpPerspective(
-                    image, transforms[i], (frame.shape[1], frame.shape[0]), cv.WARP_INVERSE_MAP)
-                cv.imshow("TEXT_WARP show", warp)
-
-                # dst_points = np.int32(dst_points)
-                # self.image = cv.fillConvexPoly(self.image, dst_points, 0)~
-                # frame = cv.add(frame, warp)
-                frame = frame + warp
 
         return frame

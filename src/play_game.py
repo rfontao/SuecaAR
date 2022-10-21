@@ -20,7 +20,7 @@ if len(sys.argv) < 5:
 def card_identification_process(frame, cards):
     final_suits = []
     final_ranks = []
-    transforms = []
+    coords = []
 
     dst = np.array([
         [0, 0],
@@ -47,9 +47,9 @@ def card_identification_process(frame, cards):
             if suits[0][1] < 0.5 and ranks[0][1] < 0.5:
                 final_suits.append(suits[0][0])
                 final_ranks.append(ranks[0][0])
-                transforms.append(M)
+                coords.append(np.int32(sortedPoints[0][0]))
 
-    return aux, final_suits, final_ranks, transforms
+    return aux, final_suits, final_ranks, coords
 
 
 # Capture video from webcam
@@ -83,7 +83,7 @@ while True:
     cards = detector.detect(frame.copy())
 
     if len(cards) > 0:
-        frame, final_suits, final_ranks, transforms = card_identification_process(
+        frame, final_suits, final_ranks, coords = card_identification_process(
             frame, cards)
         found_cards = [f"{r} {s}" for r, s in zip(final_suits, final_ranks)]
 
@@ -96,7 +96,7 @@ while True:
             if frame_counter == frames_between_rounds:
                 print("ROUND STARTED")
                 sueca.game_state = GameState.ROUND_RUNNING
-            # frame = sueca.draw_winner_cards(frame, found_cards, transforms)
+            frame = sueca.draw_winner_cards(frame, found_cards, coords)
 
         sueca.draw_found_cards(frame)
         sueca.draw_team_scores(frame)
