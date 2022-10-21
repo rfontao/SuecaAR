@@ -1,5 +1,13 @@
 from dataclasses import dataclass
 import cv2 as cv
+from enum import Enum
+import numpy as np
+
+
+class GameState(Enum):
+    GAME_ENDED = 1
+    ROUND_RUNNING = 2
+    ROUND_ENDED = 3
 
 
 class Sueca:
@@ -38,17 +46,13 @@ class Sueca:
     team_1_points = 0
     team_2_points = 0
 
-    cards_played = 0
-
     trump_suit = ""
 
     total_number_rounds = 0
 
-    play_cards_suits = []
-    play_cards_values = []
-
     current_round_cards = {}
     fixed_current_round_cards = []
+    winning_cards = []
     current_round = 0
 
     # TRUMP_SUITS = ["Spades", "Hearts", "Clubs", "Diamonds"] #Copas, Espadas, Ouros, Paus
@@ -56,15 +60,18 @@ class Sueca:
     def __init__(self, number_rounds, trump_suit):
         self.vertical_team_points = 0
         self.horizontal_team_points = 0
-        self.cards_played = 0
         self.total_number_rounds = int(number_rounds)
-        self.game_state = 0
+        self.game_state = GameState.ROUND_RUNNING
         self.setTrumpSuit(trump_suit)
         self.final_images = [cv.imread("../cards/player_1_win.png"), cv.imread(
             "../cards/player_2_win.png"), cv.imread("../cards/tie.png")]
 
     def is_game_over(self):
-        return self.total_number_rounds <= self.cards_played / 4
+        return self.current_round == self.total_number_rounds
+
+    def start_new_round(self):
+        self.winning_cards = []
+        self.game_state = GameState.ROUND_RUNNING
 
     def setTrumpSuit(self, trump_suit):
         self.trump_suit = trump_suit
@@ -89,7 +96,8 @@ class Sueca:
         #     filter(lambda x: x[0] in cards, self.current_round_cards))
         cards = list(
             filter(lambda x: x not in self.fixed_current_round_cards, cards))
-        self.current_round_cards = {key: value for (key, value) in self.current_round_cards.items() if key in cards}
+        self.current_round_cards = {key: value for (
+            key, value) in self.current_round_cards.items() if key in cards}
 
         for k in self.current_round_cards.keys():
             if k in cards:
@@ -124,12 +132,18 @@ class Sueca:
         # Add points to winner's team
         if priorities[0] == max_prio or priorities[2] == max_prio:
             self.team_1_points += roundPoints
+            self.winning_cards = [cards[0], cards[2]]
         else:
             self.team_2_points += roundPoints
+            self.winning_cards = [cards[1], cards[3]]
 
         if self.current_round == self.total_number_rounds:
             self.is_game_over = True
-            self.game_state = 1
+            self.game_state = GameState.GAME_ENDED
+            print("GAME ENDED")
+        else:
+            self.game_state = GameState.ROUND_ENDED
+            print("ROUND_ENDED")
 
         self.current_round += 1
         self.current_round_cards = {}
@@ -175,3 +189,30 @@ class Sueca:
             0.7,
             (255, 255, 0)
         )
+
+    def draw_winner_cards(self, frame, found_cards, transforms):
+        for i in range(len(found_cards)):
+            if found_cards[i] in self.winning_cards:
+                image = np.zeros((500, 726, 3))
+
+                cv.putText(
+                    image,
+                    f"Hello",
+                    [40, 40],
+                    cv.FONT_HERSHEY_COMPLEX,
+                    1.0,
+                    (255, 255, 0)
+                )
+                cv.imshow("TEXT_WARP image", image)
+
+
+                warp = cv.warpPerspective(
+                    image, transforms[i], (frame.shape[1], frame.shape[0]), cv.WARP_INVERSE_MAP)
+                cv.imshow("TEXT_WARP show", warp)
+
+                # dst_points = np.int32(dst_points)
+                # self.image = cv.fillConvexPoly(self.image, dst_points, 0)~
+                # frame = cv.add(frame, warp)
+                frame = frame + warp
+
+        return frame

@@ -77,9 +77,11 @@ class CardIdentifier():
         if len(contours) < 3:
             return None, None
 
-        def sort_key(x):
-            x, _, _, h = cv.boundingRect(x)
+        def sort_key(cnt):
+            x, _, _, h = cv.boundingRect(cnt)
             if h > 130 or h < 10:
+                return 999
+            if cv.contourArea(cnt) < 20:
                 return 999
             return x
         contours_sorted_x = sorted(contours, key=sort_key)
