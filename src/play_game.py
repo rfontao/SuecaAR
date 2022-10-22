@@ -1,14 +1,11 @@
-from pygame import Surface
-from camera import Camera
 import cv2 as cv
 import numpy as np
-from game_rules import Sueca, GameState
-from model import Model
 import sys
 
+from camera import Camera
+from game_rules import Sueca, GameState
 from card_identification import CardIdentifier
 from card_detection import CardDetector
-
 from opencv_renderer import OpenCVRenderer
 
 if len(sys.argv) < 5:
@@ -61,11 +58,13 @@ sueca = Sueca(sys.argv[3], sys.argv[4])
 frames_between_rounds = 100
 frame_counter = 0
 
-USE_OPENGL = False
+USE_OPENGL = True
 
 if USE_OPENGL:
     from OpenGL.GLUT import *
     from opengl_renderer import OpenGLRenderer
+    from model import Model
+
 
     renderer = OpenGLRenderer(
         camera.get_matrix(), int(camera.get_width()), int(camera.get_height()))

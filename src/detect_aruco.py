@@ -1,7 +1,6 @@
 from camera import Camera
 import cv2 as cv
 import numpy as np
-from model import Model
 import sys
 
 from opencv_renderer import OpenCVRenderer
@@ -11,6 +10,7 @@ USE_OPENGL = False
 if USE_OPENGL:
     from OpenGL.GLUT import *
     from opengl_renderer import OpenGLRenderer
+    from model import Model
 
 files = np.load("../params_1.npz")
 camera_matrix = files["camera_matrix"]
