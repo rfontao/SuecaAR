@@ -83,6 +83,8 @@ class CardIdentifier():
                 return 999
             if cv.contourArea(cnt) < 20:
                 return 999
+            if(x > 40):
+                return 999
             return x
         contours_sorted_x = sorted(contours, key=sort_key)
 

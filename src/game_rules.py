@@ -83,10 +83,10 @@ class Sueca:
         if not self.is_game_over:
             return -1
         if self.team_1_points > self.team_2_points:
-            return 1
+            return 0
         elif self.team_2_points > self.team_1_points:
-            return 2
-        return 0
+            return 1
+        return 2
         # if(self.team_1_points > 60):
         #    return 1
         # if(self.team_2_points > 60):
