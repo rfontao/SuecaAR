@@ -5,19 +5,19 @@ import sys
 
 from opencv_renderer import OpenCVRenderer
 
-USE_OPENGL = False
+USE_OPENGL = True
 
 if USE_OPENGL:
     from OpenGL.GLUT import *
     from opengl_renderer import OpenGLRenderer
     from model import Model
 
-files = np.load("../params_1.npz")
+files = np.load("../desktop_fontao.npz")
 camera_matrix = files["camera_matrix"]
 distortion_coefficient = files["distortion_coefficients"]
 
 
-camera = Camera(1, sys.argv[1])
+camera = Camera(0, sys.argv[1])
 if USE_OPENGL:
     renderer = OpenGLRenderer(
         camera_matrix, int(camera.get_width()), int(camera.get_height()))
@@ -28,6 +28,7 @@ if USE_OPENGL:
                                  swapyz=True, scale=[0.03, 0.03, 0.03]))
 else:
     renderer = OpenCVRenderer(camera_matrix, distortion_coefficient, scale=0.1)
+renderer.display_models = True
 
 
 while True:

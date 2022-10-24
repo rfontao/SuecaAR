@@ -29,7 +29,7 @@ class OpenCVRenderer():
             list(map(translateXY, self.image_points)))
         self.image_points *= scale
 
-        self.picture = cv.imread("../cards/full/1.png")
+        self.picture = cv.imread("../cards/tie.png")
 
         self.image = None
         self.aruco_ids = []
