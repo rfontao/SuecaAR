@@ -58,7 +58,7 @@ sueca = Sueca(sys.argv[3], sys.argv[4])
 frames_between_rounds = 100
 frame_counter = 0
 
-USE_OPENGL = True
+USE_OPENGL = False
 
 if USE_OPENGL:
     from OpenGL.GLUT import *
@@ -79,26 +79,26 @@ else:
 
 while True:
     frame = camera.get_frame()
-    cards = detector.detect(frame.copy())
+    if sueca.game_state != GameState.GAME_ENDED:
+        cards = detector.detect(frame.copy())
 
-    if len(cards) > 0:
-        frame, final_suits, final_ranks, coords = card_identification_process(
-            frame, cards)
-        found_cards = [f"{r} {s}" for r, s in zip(final_suits, final_ranks)]
+        if len(cards) > 0:
+            frame, final_suits, final_ranks, coords = card_identification_process(
+                frame, cards)
+            found_cards = [f"{r} {s}" for r, s in zip(final_suits, final_ranks)]
 
-        if sueca.game_state == GameState.ROUND_RUNNING:
-            sueca.register_cards(found_cards)
+            if sueca.game_state == GameState.ROUND_RUNNING:
+                sueca.register_cards(found_cards)
 
-        # Draw winner on top of winning cards
-        if sueca.game_state == GameState.ROUND_ENDED:
-            frame_counter += 1
-            if frame_counter == frames_between_rounds:
-                print("ROUND STARTED")
-                sueca.game_state = GameState.ROUND_RUNNING
-            frame = sueca.draw_winner_cards(frame, found_cards, coords)
+            # Draw winner on top of winning cards
+            if sueca.game_state == GameState.ROUND_ENDED:
+                frame_counter += 1
+                if frame_counter == frames_between_rounds:
+                    print("ROUND STARTED")
+                    sueca.game_state = GameState.ROUND_RUNNING
+                frame = sueca.draw_winner_cards(frame, found_cards, coords)
 
-        sueca.draw_found_cards(frame)
-        sueca.draw_team_scores(frame)
+            
 
     if sueca.game_state == GameState.GAME_ENDED:
         renderer.display_models = True
@@ -122,6 +122,9 @@ while True:
         renderer.aruco_ids = ids
         renderer.tvecs = tvecs
         renderer.rvecs = rvecs
+
+    sueca.draw_found_cards(frame)
+    sueca.draw_team_scores(frame)
 
     renderer.image = frame.copy()
     renderer.display()
